@@ -143,7 +143,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-bg flex flex-col">
+    <div className="h-screen bg-bg flex flex-col overflow-hidden">
       <Header
         projectName={project?.project.name || "Unknown Project"}
         isGlobal={isGlobal}
@@ -156,7 +156,7 @@ export default function App() {
         onSelectProject={handleSelectProject}
       />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden" style={{ minHeight: 0 }}>
         {/* Left Panel - Commit List */}
         <div className="w-96 bg-panel border-r border-zinc-800 overflow-y-auto">
           <CommitList

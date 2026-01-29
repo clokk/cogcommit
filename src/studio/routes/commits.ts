@@ -28,6 +28,19 @@ export function createCommitRoutes(projectPath: string, options: CommitRouteOpti
         commits = db.getAllCommits();
       }
 
+      // Filter out empty and warmup commits
+      commits = commits.filter((commit) => {
+        // Filter out 0-turn commits
+        const totalTurns = commit.sessions.reduce((sum, s) => sum + s.turns.length, 0);
+        if (totalTurns === 0) return false;
+
+        // Filter out warmup commits (Claude Code internal)
+        const firstUserMessage = commit.sessions[0]?.turns[0]?.content || "";
+        if (firstUserMessage.toLowerCase().includes("warmup")) return false;
+
+        return true;
+      });
+
       // Get visuals for each commit
       const commitsWithVisuals = commits.map((commit) => {
         const visuals = db.getVisualsForCommit(commit.id);

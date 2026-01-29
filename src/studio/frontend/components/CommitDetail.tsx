@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   fetchCommit,
   updateCommit,
@@ -47,6 +47,9 @@ export default function CommitDetail({
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showFilesModal, setShowFilesModal] = useState(false);
+
+  const conversationRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -55,8 +58,18 @@ export default function CommitDetail({
         setCommit(commit);
         setTitleValue(commit.title || "");
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+      });
   }, [commitId]);
+
+  // Scroll to top when commit data changes
+  useEffect(() => {
+    if (commit && conversationRef.current) {
+      console.log('Scrolling to top, ref:', conversationRef.current);
+      conversationRef.current.scrollTop = 0;
+    }
+  }, [commit]);
 
   if (loading || !commit) {
     return (
@@ -111,7 +124,7 @@ export default function CommitDetail({
   const projectColor = commit.projectName ? getProjectColor(commit.projectName) : null;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col" style={{ minHeight: 0 }}>
       {/* Fixed Header Section */}
       <div className="flex-shrink-0 p-6 pb-4 border-b border-zinc-800 bg-panel-alt">
         <div className="flex items-start justify-between">
@@ -204,51 +217,45 @@ export default function CommitDetail({
         <div className="flex items-center gap-4 mt-3 text-sm text-zinc-500">
           <span>{turnCount} turns</span>
           <span>{commit.sessions.length} session{commit.sessions.length !== 1 ? "s" : ""}</span>
-          <span>{commit.filesChanged.length} files changed</span>
+          {commit.filesChanged.length > 0 ? (
+            <button
+              onClick={() => setShowFilesModal(true)}
+              className="text-chronicle-amber hover:text-chronicle-amber/80 transition-colors"
+            >
+              {commit.filesChanged.length} files changed →
+            </button>
+          ) : (
+            <span>0 files changed</span>
+          )}
           <span>
             {formatDateTime(commit.startedAt)} - {formatDateTime(commit.closedAt)}
           </span>
         </div>
       </div>
 
-      {/* Scrollable Content Section */}
-      <div className="flex-1 overflow-y-auto p-6 pt-4">
-        {/* Visuals Gallery */}
-        {commit.visuals && commit.visuals.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-lg font-medium text-white mb-3">Visuals</h3>
-            <VisualGallery visuals={commit.visuals} onDelete={handleVisualDelete} />
-          </div>
-        )}
+      {/* Visuals Gallery - only if present */}
+      {commit.visuals && commit.visuals.length > 0 && (
+        <div className="flex-shrink-0 px-6 py-4 border-b border-zinc-800">
+          <h3 className="text-sm font-medium text-zinc-400 mb-2">Visuals</h3>
+          <VisualGallery visuals={commit.visuals} onDelete={handleVisualDelete} />
+        </div>
+      )}
 
-        {/* Files changed */}
-        {commit.filesChanged.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-lg font-medium text-white mb-3">Files Changed</h3>
-            <div className="bg-zinc-900 rounded-lg p-4">
-              <ul className="space-y-1">
-                {commit.filesChanged.map((file, i) => (
-                  <li key={i} className="font-mono text-sm text-chronicle-amber">
-                    {file}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {/* Conversation */}
-        <div>
-          <h3 className="text-lg font-medium text-white mb-3">
-            Conversation ({turnCount} turns)
-          </h3>
-          <div className="space-y-4">
-            {commit.sessions.map((session) =>
-              session.turns.map((turn) => (
-                <TurnView key={turn.id} turn={turn} />
-              ))
-            )}
-          </div>
+      {/* Conversation Section - independent scroll */}
+      <div
+        ref={conversationRef}
+        className="p-6 pt-4"
+        style={{ flex: '1 1 0%', minHeight: 0, overflowY: 'auto' }}
+      >
+        <h3 className="text-lg font-medium text-white mb-3">
+          Conversation ({turnCount} turns)
+        </h3>
+        <div className="space-y-4">
+          {commit.sessions.map((session) =>
+            session.turns.map((turn) => (
+              <TurnView key={turn.id} turn={turn} />
+            ))
+          )}
         </div>
       </div>
 
@@ -274,6 +281,40 @@ export default function CommitDetail({
               >
                 Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Files changed modal */}
+      {showFilesModal && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+          onClick={() => setShowFilesModal(false)}
+        >
+          <div
+            className="bg-panel rounded-lg p-6 w-full mx-8 max-w-[90vw] max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-white">
+                Files Changed ({commit.filesChanged.length})
+              </h3>
+              <button
+                onClick={() => setShowFilesModal(false)}
+                className="text-zinc-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 bg-zinc-900 rounded-lg p-4">
+              <ul className="space-y-1">
+                {commit.filesChanged.map((file, i) => (
+                  <li key={i} className="font-mono text-sm text-chronicle-amber">
+                    {file}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>

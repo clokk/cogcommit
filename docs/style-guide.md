@@ -203,6 +203,34 @@ Timeline navigation should feel instant - no animation delay when scrubbing.
 4. **Code is secondary** - Diffs available on demand, not dominating the view
 5. **Parallel work is visible** - Multiple sessions clearly indicated, not confusing
 
+## Known Issues & Fixes
+
+### Independent Scroll Containers (Fixed Jan 2026)
+
+**Problem:** Flexbox layouts with `overflow-y-auto` children weren't creating independent scroll contexts. The whole page would scroll instead of individual panels.
+
+**Root Cause:** Using `min-h-screen` on the root allowed content to expand beyond the viewport, causing page-level scroll instead of panel-level scroll.
+
+**Solution:**
+- Root container: Use `h-screen overflow-hidden` (fixed height, no page scroll)
+- Flex containers: Add `style={{ minHeight: 0 }}` to allow flex children to shrink
+- Scroll containers: Use `style={{ flex: '1 1 0%', minHeight: 0, overflowY: 'auto' }}`
+
+```tsx
+// Root - fixed to viewport, no page scroll
+<div className="h-screen bg-bg flex flex-col overflow-hidden">
+  <Header />
+  <div className="flex flex-1 overflow-hidden" style={{ minHeight: 0 }}>
+    {/* Left panel - independent scroll */}
+    <div className="w-96 overflow-y-auto">...</div>
+    {/* Right panel */}
+    <div className="flex-1 overflow-hidden">
+      <DetailView /> {/* Must use h-full */}
+    </div>
+  </div>
+</div>
+```
+
 ## Key Files (Future)
 
 | File | Purpose |
