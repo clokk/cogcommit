@@ -61,15 +61,22 @@
 ### Split Pane (Desktop)
 
 ```
-+-----------------------------------+-----------------------------------+
-|  COMMIT LIST (w-96)               |  COMMIT DETAIL (flex-1)           |
-|  Scrollable list                  |  Scrollable conversation          |
-+-----------------------------------+-----------------------------------+
+┌──────────────┬─┬─────────────────────────────┐
+│ Commits  [◀] │▌│  Conversation               │
+│              │▌│                             │
+│  (resizable) │▌│  (flex-1)                   │
+└──────────────┴─┴─────────────────────────────┘
 ```
 
-- Left pane: `bg-panel`, fixed width `w-96`
+- Left pane: `bg-panel`, resizable (200-600px), collapsible to 48px
+- Resizer: 4px draggable divider, highlights on hover/drag
 - Right pane: `bg-panel-alt`, flex to fill
 - App root: Radial vignette from `--bg` to black
+
+### Sidebar States
+
+**Expanded**: Shows full commit list with collapse button (◀)
+**Collapsed**: 48px strip with mini commit indicators and expand button (▶)
 
 ### Scroll Containers
 
@@ -78,11 +85,13 @@
 <div className="h-screen app-root flex flex-col overflow-hidden">
   <Header />
   <div className="flex flex-1 overflow-hidden" style={{ minHeight: 0 }}>
-    {/* Left panel - independent scroll */}
-    <div className="w-96 overflow-y-auto">...</div>
+    {/* Left panel - resizable, collapsible */}
+    <div style={{ width: sidebarCollapsed ? 48 : sidebarWidth }}>...</div>
+    {/* Resizer */}
+    <div className="w-1 cursor-col-resize" onMouseDown={handleMouseDown} />
     {/* Right panel */}
     <div className="flex-1 overflow-hidden">
-      <DetailView /> {/* Must use h-full */}
+      <DetailView />
     </div>
   </div>
 </div>
@@ -92,6 +101,14 @@
 - Root: `h-screen overflow-hidden` (NOT `min-h-screen`)
 - Flex containers: `style={{ minHeight: 0 }}` to allow children to shrink
 - Scroll containers: `style={{ flex: '1 1 0%', minHeight: 0, overflowY: 'auto' }}`
+
+### User Preferences (localStorage)
+
+| Key | Type | Default | Purpose |
+|-----|------|---------|---------|
+| `agentlogs-sidebar-width` | number | 384 | Sidebar width in pixels |
+| `agentlogs-sidebar-collapsed` | boolean | false | Sidebar collapsed state |
+| `agentlogs-font-size` | number | 16 | Conversation font size (12-20px) |
 
 ## Component Patterns
 
@@ -135,6 +152,37 @@
 ```tsx
 <span className="font-mono text-commit-open">[uncommitted]</span>
 ```
+
+### Font Size Controls
+
+Located in the turn navigation bar at bottom of conversation view:
+
+```tsx
+<div className="flex items-center gap-1 border border-zinc-700 rounded">
+  <button onClick={decreaseFontSize}>
+    <span className="text-xs font-bold">A</span>
+  </button>
+  <span className="text-xs font-mono">{fontSize}</span>
+  <button onClick={increaseFontSize}>
+    <span className="text-sm font-bold">A</span>
+  </button>
+</div>
+```
+
+Available sizes: 12, 14, 16, 18, 20px (default: 16px)
+
+### Compact Header
+
+The conversation header is condensed to 2 rows:
+
+```
+Row 1: [project] [abc123] · 232 turns · 15 files  [/ search] [Delete]
+Row 2: Click to add title...
+```
+
+- Stats inline with metadata using dot separators
+- Search input expands on focus (w-36 → w-48)
+- Reduced padding (p-4 instead of p-6)
 
 ## Animations
 

@@ -61,11 +61,13 @@ Using `min-h-screen` on the root allows content to expand beyond viewport, causi
 <div className="h-screen bg-bg flex flex-col overflow-hidden">
   <Header />
   <div className="flex flex-1 overflow-hidden" style={{ minHeight: 0 }}>
-    {/* Left panel - independent scroll */}
-    <div className="w-96 overflow-y-auto">...</div>
+    {/* Left panel - resizable, collapsible */}
+    <div style={{ width: sidebarCollapsed ? 48 : sidebarWidth }}>...</div>
+    {/* Resizer */}
+    <div className="w-1 cursor-col-resize" />
     {/* Right panel */}
     <div className="flex-1 overflow-hidden">
-      <DetailView /> {/* Must use h-full */}
+      <DetailView />
     </div>
   </div>
 </div>
@@ -75,6 +77,24 @@ Using `min-h-screen` on the root allows content to expand beyond viewport, causi
 - Root: `h-screen overflow-hidden` (NOT `min-h-screen`)
 - Flex containers: `style={{ minHeight: 0 }}` to allow children to shrink
 - Scroll containers: `style={{ flex: '1 1 0%', minHeight: 0, overflowY: 'auto' }}`
+
+---
+
+## Studio Layout Features
+
+### Resizable Sidebar
+- Drag the divider between sidebar and conversation to resize (200-600px)
+- Width persisted to `localStorage` key: `agentlogs-sidebar-width`
+
+### Collapsible Sidebar
+- Click chevron button to collapse/expand
+- Collapsed state shows mini commit indicators (48px strip)
+- State persisted to `localStorage` key: `agentlogs-sidebar-collapsed`
+
+### Font Size Controls
+- Located in turn navigation bar at bottom of conversation
+- Sizes: 12, 14, 16, 18, 20px (default: 16px)
+- Persisted to `localStorage` key: `agentlogs-font-size`
 
 ---
 
