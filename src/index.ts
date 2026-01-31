@@ -560,35 +560,36 @@ function getTimeAgo(date: Date): string {
 
 program
   .command("studio")
-  .description("Start the web-based curation studio")
+  .description("Start the web-based curation studio (defaults to all projects)")
+  .option("-P, --project", "View only current project (requires init)")
   .option("-p, --port <port>", "Port to run on", parseInt)
   .option("--no-open", "Don't auto-open browser")
-  .option("-g, --global", "Global mode: view all Claude Code history")
+  .option("-g, --global", "View all Claude Code history (default)")
   .action(async (options) => {
     try {
       let storagePath: string;
 
-      if (options.global) {
-        // Global mode - use global storage directory
-        storagePath = ensureGlobalStorageDir();
-        console.log("Starting studio in global mode...");
-      } else {
+      if (options.project) {
         // Project mode - require initialization
         const projectPath = process.cwd();
 
         if (!isInitialized(projectPath)) {
           console.error("Project not initialized. Run 'shipchronicle init' first.");
-          console.error("Or use --global flag to view all Claude Code history.");
+          console.error("\nTip: Run without --project to see all your Claude history.");
           process.exit(1);
         }
 
         storagePath = projectPath;
+      } else {
+        // Global mode (default) - use global storage directory
+        storagePath = ensureGlobalStorageDir();
+        console.log("Starting studio...");
       }
 
       await startStudio(storagePath, {
         port: options.port,
         open: options.open !== false,
-        global: options.global,
+        global: !options.project,
       });
     } catch (error) {
       console.error(`Error: ${(error as Error).message}`);
@@ -598,17 +599,31 @@ program
 
 program
   .command("import")
-  .description("Import parsed sessions into the database")
+  .description("Import Claude Code sessions into the database (defaults to all projects)")
   .option("-c, --claude-path <path>", "Claude project path to import from")
-  .option("-g, --global", "Import all Claude Code projects into global history")
+  .option("-g, --global", "Import all Claude Code projects (default)")
+  .option("-p, --project", "Import only current project (requires init)")
   .option("--clear", "Clear existing commits before importing")
   .action(async (options) => {
     try {
       let storagePath: string;
       let claudePaths: string[];
 
-      if (options.global) {
-        // Global mode - import from all Claude projects
+      if (options.project) {
+        // Project mode - requires initialization
+        const projectPath = process.cwd();
+
+        if (!isInitialized(projectPath)) {
+          console.error("Project not initialized. Run 'shipchronicle init' first.");
+          console.error("\nTip: Run without --project to import all your Claude history.");
+          process.exit(1);
+        }
+
+        storagePath = projectPath;
+        const config = loadConfig(projectPath);
+        claudePaths = [options.claudePath || config.claudeProjectPath];
+      } else {
+        // Global mode (default) - import from all Claude projects
         storagePath = ensureGlobalStorageDir();
         claudePaths = discoverAllClaudeProjects();
 
@@ -618,23 +633,10 @@ program
           console.log("No Claude Code projects found.");
           return;
         }
-      } else {
-        // Project mode
-        const projectPath = process.cwd();
-
-        if (!isInitialized(projectPath)) {
-          console.error("Project not initialized. Run 'shipchronicle init' first.");
-          console.error("Or use --global flag to import all Claude Code history.");
-          process.exit(1);
-        }
-
-        storagePath = projectPath;
-        const config = loadConfig(projectPath);
-        claudePaths = [options.claudePath || config.claudeProjectPath];
       }
 
-      // Open database
-      const db = new ShipchronicleDB(storagePath, { rawStoragePath: options.global });
+      // Open database (global mode is default, project mode uses rawStoragePath: false)
+      const db = new ShipchronicleDB(storagePath, { rawStoragePath: !options.project });
 
       // Optionally clear existing commits
       if (options.clear) {
@@ -678,8 +680,8 @@ program
             continue;
           }
 
-          // Set project name for global mode
-          if (options.global) {
+          // Set project name for global mode (default)
+          if (!options.project) {
             commit.projectName = projectName;
           }
 
@@ -701,8 +703,8 @@ program
       }
       console.log();
 
-      if (options.global) {
-        console.log("Import complete! Run 'shipchronicle studio --global' to view.");
+      if (options.project) {
+        console.log("Import complete! Run 'shipchronicle studio --project' to view.");
       } else {
         console.log("Import complete! Run 'shipchronicle studio' to view.");
       }

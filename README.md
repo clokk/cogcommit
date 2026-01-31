@@ -15,30 +15,32 @@ npm run build:studio  # Build the web UI
 ## Quick Start
 
 ```bash
-# Initialize shipchronicle for your project
-cd your-project
-shipchronicle init
-
-# Import existing Claude sessions
+# Import all your Claude Code history
 shipchronicle import
 
-# Open the web studio to browse conversations
+# Open the studio to browse conversations
 shipchronicle studio
 ```
 
-**Or browse ALL your Claude Code history:**
+That's it! No setup required. Global mode is now the default.
+
+**Or focus on a single project:**
 
 ```bash
-# Import from all Claude projects
-shipchronicle import --global
+# Initialize for project-specific mode (needed for daemon/capture)
+cd your-project
+shipchronicle init
 
-# View everything in the studio
-shipchronicle studio --global
+# Import only this project
+shipchronicle import --project
+
+# View only this project
+shipchronicle studio --project
 ```
 
-## Global Mode
+## Global Mode (Default)
 
-Global mode lets you explore your entire Claude Code history across all projects in one view.
+Global mode is the default. It lets you explore your entire Claude Code history across all projects in one view.
 
 ### Features
 
@@ -50,14 +52,14 @@ Global mode lets you explore your entire Claude Code history across all projects
 ### Usage
 
 ```bash
-# First, import all Claude Code projects
-shipchronicle import --global
+# Import all Claude Code projects (default behavior)
+shipchronicle import
 
 # Re-import with fresh data (clears existing)
-shipchronicle import --global --clear
+shipchronicle import --clear
 
-# Open the studio in global mode
-shipchronicle studio --global
+# Open the studio (global view is default)
+shipchronicle studio
 ```
 
 ### How It Works
@@ -72,27 +74,27 @@ shipchronicle studio --global
 ### Web Studio (Phase 3)
 
 ```bash
-# Start the web-based curation studio
+# Start the web-based curation studio (global view, default)
 shipchronicle studio                 # Opens http://localhost:4747
+
+# View only current project (requires init)
+shipchronicle studio --project
 
 # Custom port
 shipchronicle studio --port 3000
 
 # Don't auto-open browser
 shipchronicle studio --no-open
-
-# Global mode: view ALL Claude Code history
-shipchronicle studio --global
 ```
 
 ### Import Sessions
 
 ```bash
-# Import sessions from configured Claude project
+# Import all Claude Code projects (default)
 shipchronicle import
 
-# Import from all Claude Code projects (global history)
-shipchronicle import --global
+# Import only current project (requires init)
+shipchronicle import --project
 
 # Clear existing data before importing
 shipchronicle import --clear
@@ -103,8 +105,10 @@ shipchronicle import --claude-path ~/.claude/projects/-Users-you-project
 
 ### Watch Daemon (Phase 2)
 
+The daemon enables real-time capture of sessions and screenshots. Requires initialization.
+
 ```bash
-# Initialize for a project (auto-detects Claude project path)
+# Initialize for a project (required for daemon and --project mode)
 shipchronicle init
 
 # Start watching for Claude sessions (runs in background)
