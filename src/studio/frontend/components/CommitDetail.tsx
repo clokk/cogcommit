@@ -259,6 +259,51 @@ export default function CommitDetail({
     }
   }, [currentItemIndex, renderItems, scrollToItem]);
 
+  // Update current item based on scroll position
+  useEffect(() => {
+    const container = conversationRef.current;
+    if (!container || renderItems.length === 0) return;
+
+    const handleScroll = () => {
+      const containerRect = container.getBoundingClientRect();
+      const containerTop = containerRect.top;
+
+      // Find the item closest to the top of the visible area
+      let closestIdx = 0;
+      let closestDistance = Infinity;
+
+      itemRefs.current.forEach((el, idx) => {
+        const rect = el.getBoundingClientRect();
+        // Distance from item top to container top (positive = below, negative = above)
+        const distance = rect.top - containerTop;
+
+        // We want the item that's closest to or just past the top
+        // Prefer items that are visible (distance >= -rect.height)
+        if (distance >= -rect.height && distance < closestDistance) {
+          closestDistance = distance;
+          closestIdx = idx;
+        }
+      });
+
+      setCurrentItemIndex(closestIdx);
+    };
+
+    // Debounce scroll handler for performance
+    let ticking = false;
+    const scrollListener = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    container.addEventListener("scroll", scrollListener);
+    return () => container.removeEventListener("scroll", scrollListener);
+  }, [renderItems.length]);
+
   // Navigate search matches
   const goToNextMatch = useCallback(() => {
     if (searchMatchIndices.length === 0) return;
