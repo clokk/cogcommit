@@ -240,6 +240,7 @@ function processAssistantEntry(
       role: "assistant",
       content: textContent,
       timestamp: entry.timestamp,
+      model: entry.message.model,
       toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
       triggersVisualUpdate:
         toolCalls.some((tc) => ["Edit", "Write"].includes(tc.name)) ||

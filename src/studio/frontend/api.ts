@@ -9,6 +9,7 @@ export interface Turn {
   role: "user" | "assistant";
   content: string;
   timestamp: string;
+  model?: string;
   toolCalls?: Array<{
     id: string;
     name: string;

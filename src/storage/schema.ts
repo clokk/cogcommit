@@ -2,7 +2,7 @@
  * SQLite schema definitions for Agentlogs
  */
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const CREATE_TABLES = `
 -- Cognitive commits (persisted)
@@ -83,6 +83,13 @@ export const MIGRATIONS: { version: number; sql: string }[] = [
       -- Add project_name column for global mode filtering
       ALTER TABLE cognitive_commits ADD COLUMN project_name TEXT;
       CREATE INDEX IF NOT EXISTS idx_commits_project ON cognitive_commits(project_name);
+    `,
+  },
+  {
+    version: 4,
+    sql: `
+      -- Add model column to turns for displaying which model generated the response
+      ALTER TABLE turns ADD COLUMN model TEXT;
     `,
   },
 ];

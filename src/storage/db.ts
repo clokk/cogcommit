@@ -352,8 +352,8 @@ export class AgentlogsDB {
   insertTurn(turn: Turn, sessionId: string): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO turns
-      (id, session_id, role, content, timestamp, tool_calls, triggers_visual)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      (id, session_id, role, content, timestamp, tool_calls, triggers_visual, model)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -363,7 +363,8 @@ export class AgentlogsDB {
       turn.content,
       turn.timestamp,
       turn.toolCalls ? JSON.stringify(turn.toolCalls) : null,
-      turn.triggersVisualUpdate ? 1 : 0
+      turn.triggersVisualUpdate ? 1 : 0,
+      turn.model || null
     );
   }
 
@@ -384,6 +385,7 @@ export class AgentlogsDB {
       role: row.role as "user" | "assistant",
       content: row.content || "",
       timestamp: row.timestamp,
+      model: row.model || undefined,
       toolCalls: row.tool_calls ? JSON.parse(row.tool_calls) : undefined,
       triggersVisualUpdate: row.triggers_visual === 1 ? true : undefined,
     };
@@ -618,6 +620,7 @@ interface TurnRow {
   timestamp: string;
   tool_calls: string | null;
   triggers_visual: number;
+  model: string | null;
 }
 
 interface VisualRow {
