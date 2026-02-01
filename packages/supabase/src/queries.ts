@@ -50,7 +50,7 @@ export async function getCommits(
   } = options;
 
   let query = client
-    .from("commits")
+    .from("cognitive_commits")
     .select(
       `
       *,
@@ -98,7 +98,7 @@ export async function getCommit(
   commitId: string
 ): Promise<CognitiveCommit | null> {
   const { data, error } = await client
-    .from("commits")
+    .from("cognitive_commits")
     .select(
       `
       *,
@@ -137,7 +137,7 @@ export async function getCommitsCount(
   const { userId, projectName, excludeHidden = true } = options;
 
   let query = client
-    .from("commits")
+    .from("cognitive_commits")
     .select("id", { count: "exact", head: true })
     .is("deleted_at", null);
 
@@ -170,7 +170,7 @@ export async function getProjectNames(
   userId?: string
 ): Promise<string[]> {
   let query = client
-    .from("commits")
+    .from("cognitive_commits")
     .select("project_name")
     .is("deleted_at", null)
     .not("project_name", "is", null);
@@ -228,7 +228,7 @@ export async function updateCommit(
   }
 
   const { data, error } = await client
-    .from("commits")
+    .from("cognitive_commits")
     .update(dbUpdates)
     .eq("id", commitId)
     .select(
@@ -257,7 +257,7 @@ export async function deleteCommit(
   commitId: string
 ): Promise<void> {
   const { error } = await client
-    .from("commits")
+    .from("cognitive_commits")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", commitId);
 

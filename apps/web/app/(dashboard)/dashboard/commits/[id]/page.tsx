@@ -104,7 +104,7 @@ export default async function CommitDetailPage({
   const supabase = await createClient();
 
   const { data: commit, error } = await supabase
-    .from("commits")
+    .from("cognitive_commits")
     .select(
       `
       *,

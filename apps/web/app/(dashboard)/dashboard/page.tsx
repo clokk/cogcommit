@@ -54,7 +54,7 @@ export default async function DashboardPage() {
 
   // Fetch commits with sessions and turns count
   const { data: commits, error } = await supabase
-    .from("commits")
+    .from("cognitive_commits")
     .select(
       `
       id,
