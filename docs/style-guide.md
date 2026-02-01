@@ -218,20 +218,91 @@ Navigation uses "items" (visual groups) instead of raw turns:
 
 ## Animations
 
-Only 2 signature animations are permitted:
+We use a restrained animation palette with Framer Motion for skeleton loading states:
 
-| Animation | Duration | Usage |
-|-----------|----------|-------|
-| `slide-in-panel` | 0.2s | Detail panel entrance when selecting commit |
-| `expand-accordion` | 0.2s | Tool call expansion |
+### Permitted Animations
+
+| Animation | Library | Duration | Usage |
+|-----------|---------|----------|-------|
+| `slide-in-panel` | CSS | 0.2s | Detail panel entrance when selecting commit |
+| `expand-accordion` | CSS | 0.2s | Tool call expansion |
+| `shimmer` | Framer Motion | 1.5s | Skeleton loading gradient sweep |
+| `stagger-children` | Framer Motion | 0.08s delay | Sequential card appearance |
+| `animate-pulse` | Tailwind | 2s | Fallback skeleton pulse |
+
+### Framer Motion Skeleton Animations
+
+**Shimmer Effect** - A subtle gradient sweep across skeleton elements:
+
+```tsx
+import { motion } from "framer-motion";
+
+export function Shimmer() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <motion.div
+        className="absolute inset-y-0 w-full"
+        style={{
+          background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.07) 50%, transparent 100%)",
+        }}
+        initial={{ x: "-100%" }}
+        animate={{ x: "100%" }}
+        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+      />
+    </div>
+  );
+}
+```
+
+**Stagger Animation** - Cards fade in sequentially:
+
+```tsx
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08 },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 },
+};
+
+// Usage
+<motion.div variants={containerVariants} initial="hidden" animate="visible">
+  {items.map((item) => (
+    <motion.div key={item.id} variants={cardVariants}>
+      {/* Card content */}
+    </motion.div>
+  ))}
+</motion.div>
+```
+
+### Skeleton Placeholders
+
+Use `bg-subtle/40` with `animate-pulse` for skeleton elements:
+
+```tsx
+<div className="h-5 w-24 bg-subtle/40 rounded animate-pulse" />
+<div className="h-5 w-3/4 bg-subtle/40 rounded animate-pulse" />
+```
+
+### Animation Guidelines
+
+- **DO**: Use shimmer + stagger for skeleton loading states
+- **DO**: Keep shimmer opacity subtle (7% white on dark backgrounds)
+- **DO**: Use `animate-pulse` as a fallback/complement to shimmer
+- **DON'T**: Add hover animations or micro-interactions
+- **DON'T**: Use loading spinners (prefer skeleton loaders)
+- **DON'T**: Animate content that's already loaded
 
 ```css
 /* Applied via classes */
 .animate-slide-in { /* Detail panels */ }
 .animate-expand { /* Accordion sections */ }
 ```
-
-**No micro-animations, hover wobbles, or loading spinners.**
 
 ## Anti-Slop Design Principles
 
@@ -267,6 +338,8 @@ Only 2 signature animations are permitted:
 
 ## Key Files
 
+### CLI Studio (Local Viewer)
+
 | File | Purpose |
 |------|---------|
 | `src/studio/frontend/styles/tailwind.css` | CSS variables, animations, utility classes |
@@ -275,3 +348,13 @@ Only 2 signature animations are permitted:
 | `src/studio/frontend/App.tsx` | Main layout with app-root |
 | `src/studio/frontend/components/CommitDetail.tsx` | Detail view with slide-in animation |
 | `src/studio/frontend/components/TurnView.tsx` | Turn display with accordion animation |
+
+### Web Dashboard
+
+| File | Purpose |
+|------|---------|
+| `packages/ui/src/Shimmer.tsx` | Reusable shimmer animation component |
+| `packages/ui/src/CommitCardSkeleton.tsx` | Single card skeleton with shimmer + motion |
+| `packages/ui/src/CommitListSkeleton.tsx` | List skeleton with stagger animation |
+| `apps/web/app/(dashboard)/dashboard/loading.tsx` | Route transition loading state |
+| `apps/web/app/(dashboard)/dashboard/DashboardClient.tsx` | Client component with loading state |

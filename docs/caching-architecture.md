@@ -21,8 +21,8 @@ Our caching strategy has four layers, each solving a different problem:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Layer 1: Skeleton Loaders                                  │
-│  "Show something instantly while we wait"                   │
+│  Layer 1: Skeleton Loaders + Client-Side Loading            │
+│  "Show animated skeleton instantly while data loads"        │
 ├─────────────────────────────────────────────────────────────┤
 │  Layer 2: Server Cache (React cache())                      │
 │  "Request-level deduplication"                              │
@@ -39,59 +39,141 @@ Let's explore each layer in detail.
 
 ---
 
-## Layer 1: Skeleton Loaders
+## Layer 1: Skeleton Loaders + Client-Side Data Fetching
 
-**Problem:** When a page is loading, users see a blank screen. This feels slow and broken.
+**Problem:** When a page is loading, users see a blank screen. This feels slow and broken. Server-side data fetching blocks the HTML response, preventing any UI from appearing until data is ready.
 
-**Solution:** Show placeholder UI that mimics the real content shape.
+**Solution:** Show animated skeleton UI immediately using client-side data fetching. The page renders a loading state while React Query fetches data in the background.
 
-### How It Works
-
-Next.js has a special file convention: any file named `loading.tsx` automatically becomes a loading state for that route. When you navigate to `/dashboard`, Next.js shows `loading.tsx` while the page data is being fetched.
+### The Architecture
 
 ```
 apps/web/app/(dashboard)/dashboard/
-├── page.tsx      ← The actual page (async, fetches data)
-└── loading.tsx   ← Shown while page.tsx is loading
+├── page.tsx           ← Server component (auth only, no data fetch)
+├── DashboardClient.tsx ← Client component (fetches data, shows loading)
+└── loading.tsx        ← Shown during route transitions
 ```
 
-### The Skeleton Components
+### Why Client-Side Data Fetching?
 
-We created reusable skeleton components in the UI package:
+We moved data fetching from server to client to achieve **instant loading states**:
 
-**`CommitCardSkeleton.tsx`** - Matches the layout of a real CommitCard:
+**Before (Server-Side):**
+```
+User refreshes → Server auth check → Server data fetch → HTML sent → UI appears
+                 └─────────── Blocking delay (no UI) ──────────┘
+```
+
+**After (Client-Side):**
+```
+User refreshes → Server auth check → HTML with skeleton sent → Client fetches data
+                                     └─ UI appears immediately ─┘
+```
+
+### Page Structure
+
+**`page.tsx`** - Only handles authentication:
 
 ```tsx
-export default function CommitCardSkeleton() {
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return null; // Layout redirects to login
+
+  // Pass only auth info - NO data fetching here
   return (
-    <div className="rounded-lg p-3 border-l-2 border-subtle bg-bg/50 animate-pulse">
-      {/* Git hash placeholder */}
-      <div className="h-5 w-24 bg-subtle/30 rounded" />
-
-      {/* Title placeholder */}
-      <div className="h-5 w-3/4 bg-subtle/30 rounded mt-1" />
-
-      {/* Stats placeholder */}
-      <div className="flex gap-3 mt-1">
-        <div className="h-4 w-16 bg-subtle/30 rounded" />
-        <div className="h-4 w-20 bg-subtle/30 rounded" />
-      </div>
-    </div>
+    <DashboardClient
+      userId={user.id}
+      userName={userName}
+      avatarUrl={avatarUrl}
+    />
   );
 }
 ```
 
-The key CSS class is `animate-pulse`, which creates a gentle pulsing animation that signals "loading" to users.
-
-**`CommitListSkeleton.tsx`** - Renders multiple card skeletons:
+**`DashboardClient.tsx`** - Client component with loading state:
 
 ```tsx
+"use client";
+
+export default function DashboardClient({ userId, userName, avatarUrl }) {
+  // React Query handles data fetching with loading state
+  const { data: commits = [], isLoading } = useCommits({ project: selectedProject });
+  const { data: projectsData } = useProjects();
+
+  // Show skeleton immediately while loading
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  return <DashboardView commits={commits} ... />;
+}
+```
+
+### The Skeleton Components
+
+We created reusable skeleton components in the UI package with Framer Motion animations:
+
+**`CommitCardSkeleton.tsx`** - Matches the layout of a real CommitCard with shimmer effect:
+
+```tsx
+export default function CommitCardSkeleton() {
+  return (
+    <motion.div
+      variants={cardVariants}
+      className="relative rounded-lg p-3 border-l-2 border-subtle bg-bg/50 overflow-hidden"
+    >
+      <Shimmer />
+      <div className="h-5 w-24 bg-subtle/40 rounded animate-pulse" />
+      <div className="h-5 w-3/4 bg-subtle/40 rounded mt-1 animate-pulse" />
+      {/* ... */}
+    </motion.div>
+  );
+}
+```
+
+**`CommitListSkeleton.tsx`** - Renders multiple card skeletons with stagger animation:
+
+```tsx
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08 },
+  },
+};
+
 export default function CommitListSkeleton({ count = 8 }) {
   return (
-    <div className="p-2 space-y-2">
+    <motion.div variants={containerVariants} initial="hidden" animate="visible">
       {Array.from({ length: count }).map((_, i) => (
         <CommitCardSkeleton key={i} />
       ))}
+    </motion.div>
+  );
+}
+```
+
+### Shimmer Effect
+
+The `Shimmer` component provides a subtle animated gradient sweep:
+
+```tsx
+export function Shimmer() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <motion.div
+        className="absolute inset-y-0 w-full"
+        style={{
+          background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.07) 50%, transparent 100%)",
+        }}
+        initial={{ x: "-100%" }}
+        animate={{ x: "100%" }}
+        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+      />
     </div>
   );
 }
@@ -218,47 +300,28 @@ export const commitKeys = {
     [...commitKeys.all, "list", { project: project ?? "all" }],
 };
 
-export function useCommits({ initialData, project }) {
+export function useCommits({ project }) {
   return useQuery({
     queryKey: commitKeys.list(project),
     queryFn: async () => {
       const res = await fetch(`/api/commits?project=${project || ""}`);
       return res.json();
     },
-    initialData,           // Server-rendered data for instant first paint
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useProjects() {
+  return useQuery({
+    queryKey: ["projects"],
+    queryFn: async () => {
+      const res = await fetch("/api/projects");
+      return res.json();
+    },
     staleTime: 5 * 60 * 1000,
   });
 }
 ```
-
-### Hydration: Server Meets Client
-
-Here's the clever part. The dashboard page fetches data on the server:
-
-```tsx
-// page.tsx (server component)
-export default async function DashboardPage() {
-  const { commits } = await getCachedCommits(user.id);
-
-  return <DashboardView commits={commits} />;
-}
-```
-
-Then DashboardView (client component) uses that server data as `initialData`:
-
-```tsx
-// DashboardView.tsx (client component)
-const { data: commits } = useCommits({
-  initialData: serverCommits,  // Instantly available, no loading state
-  project: selectedProject,
-});
-```
-
-This means:
-1. First render: Server data appears instantly (no loading spinner)
-2. React Query takes ownership of that data
-3. Future navigations use React Query's cache
-4. Background refetches keep data fresh
 
 ### Optimistic Updates
 
@@ -394,32 +457,34 @@ Breaking this down:
 
 Let's trace through a complete user journey:
 
-### 1. First Visit
+### 1. First Visit / Hard Refresh
 ```
 User navigates to /dashboard
-  → loading.tsx shows skeleton instantly
-  → page.tsx calls getCachedCommits()
-    → Query database → transform data → return
-  → DashboardView renders with server data
+  → Middleware checks for auth cookie (fast, no API call)
+  → Server renders page with DashboardClient
+  → Browser receives HTML, hydrates
+  → DashboardClient shows skeleton immediately (isLoading = true)
+  → React Query fetches /api/commits in background
+  → Data arrives, skeleton replaced with actual content
   → React Query stores data in client cache (5min staleTime)
 ```
 
-### 2. Page Refresh
+### 2. Client-Side Navigation
 ```
-User refreshes the page
-  → loading.tsx shows skeleton
-  → page.tsx calls getCachedCommits()
-    → Query database → return fresh data
-  → DashboardView renders with new server data
-  → React Query updates client cache
+User navigates from /settings to /dashboard
+  → loading.tsx shows skeleton during route transition
+  → DashboardClient mounts
+  → React Query checks cache
+  → If fresh: renders immediately from cache
+  → If stale: shows cached data, refetches in background
 ```
 
 ### 3. Navigate Away and Back (within 5 minutes)
 ```
 User goes to /settings, then back to /dashboard
   → React Query has cached data (still fresh)
-  → DashboardView renders instantly (no loading state)
-  → No server request needed
+  → DashboardClient renders instantly (no loading state)
+  → No API request needed
 ```
 
 ### 4. User Edits a Title
@@ -444,6 +509,30 @@ User switches to another tab, comes back after 6 minutes
 
 ---
 
+## Middleware Optimization
+
+The middleware is optimized to avoid blocking the page render:
+
+```tsx
+export async function updateSession(request: NextRequest) {
+  // Quick check: does a session cookie exist? (no API call)
+  const hasSessionCookie = request.cookies.has("sb-access-token") ||
+    Array.from(request.cookies.getAll()).some(c => c.name.includes("auth-token"));
+
+  // Only redirect if NO cookie exists
+  if (isProtectedRoute && !hasSessionCookie) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // Full auth verification happens in the layout, not middleware
+  return response;
+}
+```
+
+This ensures the page can start rendering immediately while auth verification happens in parallel.
+
+---
+
 ## Common Gotchas
 
 ### 1. Cache Key Mismatch
@@ -462,16 +551,8 @@ If you add a new mutation that modifies data, remember to:
 1. Call `revalidateUserCommits()` in the API route
 2. Call `queryClient.invalidateQueries()` in the mutation
 
-### 3. Initial Data Type Mismatch
-The `initialData` you pass to `useQuery` must match the return type of `queryFn`:
-
-```tsx
-// queryFn returns CognitiveCommit[]
-useQuery({
-  queryFn: async () => fetchCommits(),  // Returns CognitiveCommit[]
-  initialData: serverCommits,            // Must also be CognitiveCommit[]
-});
-```
+### 3. Server-Side Blocking
+Avoid fetching data in server components if you want instant loading states. Move data fetching to client components with React Query.
 
 ### 4. Stale Closure in Callbacks
 When using callbacks in mutations, capture current values:
@@ -494,9 +575,12 @@ const handleTitleChange = useCallback(() => {
 
 | File | Purpose |
 |------|---------|
-| `packages/ui/src/CommitCardSkeleton.tsx` | Single card skeleton |
-| `packages/ui/src/CommitListSkeleton.tsx` | List of card skeletons |
-| `apps/web/app/(dashboard)/dashboard/loading.tsx` | Page-level loading state |
+| `packages/ui/src/CommitCardSkeleton.tsx` | Single card skeleton with shimmer |
+| `packages/ui/src/CommitListSkeleton.tsx` | List of card skeletons with stagger |
+| `packages/ui/src/Shimmer.tsx` | Reusable shimmer animation component |
+| `apps/web/app/(dashboard)/dashboard/page.tsx` | Server component (auth only) |
+| `apps/web/app/(dashboard)/dashboard/DashboardClient.tsx` | Client component with loading state |
+| `apps/web/app/(dashboard)/dashboard/loading.tsx` | Route transition loading state |
 | `apps/web/lib/data/commits.ts` | Server-cached data fetching |
 | `apps/web/lib/data/revalidate.ts` | Cache invalidation actions |
 | `apps/web/components/providers/QueryProvider.tsx` | React Query setup |
@@ -508,4 +592,5 @@ const handleTitleChange = useCallback(() => {
 
 - [Next.js Caching Documentation](https://nextjs.org/docs/app/building-your-application/caching)
 - [React Query Documentation](https://tanstack.com/query/latest/docs/react/overview)
+- [Framer Motion Documentation](https://www.framer.com/motion/)
 - [HTTP Cache-Control Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control)
