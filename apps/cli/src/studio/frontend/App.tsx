@@ -7,8 +7,7 @@ import {
   type ProjectListItem,
   type CognitiveCommit,
 } from "./api";
-import Header from "./components/Header";
-import CommitList from "./components/CommitList";
+import { Header, CommitList, useResizable } from "@cogcommit/ui";
 import CommitDetail from "./components/CommitDetail";
 
 // localStorage keys
@@ -20,62 +19,6 @@ const DEFAULT_SIDEBAR_WIDTH = 384;
 const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 600;
 const COLLAPSED_WIDTH = 48;
-
-/**
- * Custom hook for resizable panel
- */
-function useResizable(
-  initialWidth: number,
-  minWidth: number,
-  maxWidth: number,
-  storageKey: string
-) {
-  const [width, setWidth] = useState(() => {
-    const stored = localStorage.getItem(storageKey);
-    return stored ? Math.max(minWidth, Math.min(maxWidth, parseInt(stored, 10))) : initialWidth;
-  });
-  const [isDragging, setIsDragging] = useState(false);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const newWidth = Math.max(minWidth, Math.min(maxWidth, e.clientX));
-      setWidth(newWidth);
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      localStorage.setItem(storageKey, width.toString());
-    };
-
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-  }, [isDragging, minWidth, maxWidth, storageKey, width]);
-
-  // Persist width changes
-  useEffect(() => {
-    if (!isDragging) {
-      localStorage.setItem(storageKey, width.toString());
-    }
-  }, [width, isDragging, storageKey]);
-
-  return { width, setWidth, isDragging, handleMouseDown };
-}
 
 export default function App() {
   const [project, setProject] = useState<ProjectInfo | null>(null);

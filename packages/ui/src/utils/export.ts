@@ -1,4 +1,4 @@
-import type { CognitiveCommit, Turn } from "../api";
+import type { CognitiveCommit, Turn } from "@cogcommit/types";
 
 /**
  * Format a single turn as markdown
@@ -131,7 +131,11 @@ export function formatCommitAsPlainText(commit: CognitiveCommit): string {
 /**
  * Trigger a file download in the browser
  */
-export function downloadFile(content: string, filename: string, mimeType: string): void {
+export function downloadFile(
+  content: string,
+  filename: string,
+  mimeType: string
+): void {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

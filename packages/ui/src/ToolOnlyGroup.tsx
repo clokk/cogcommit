@@ -2,6 +2,7 @@
 
 import React, { useState, forwardRef } from "react";
 import type { Turn, ToolCall } from "@cogcommit/types";
+import { formatToolInput } from "./utils/formatters";
 
 interface ToolOnlyGroupProps {
   turns: Turn[];
@@ -23,22 +24,6 @@ function getToolSummary(tc: ToolCall): string {
   if ("url" in input) return String(input.url);
   if (tc.isError) return "Error";
   return tc.name;
-}
-
-/**
- * Format tool input for display
- */
-function formatToolInput(input: Record<string, unknown>): string {
-  if ("command" in input) {
-    return `command: ${input.command}`;
-  }
-  if ("file_path" in input) {
-    return `file: ${input.file_path}`;
-  }
-  if ("pattern" in input) {
-    return `pattern: ${input.pattern}`;
-  }
-  return JSON.stringify(input, null, 2);
 }
 
 interface ExtendedToolCall extends ToolCall {
@@ -90,7 +75,7 @@ const ToolOnlyGroup = forwardRef<HTMLDivElement, ToolOnlyGroupProps>(
                     ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                     : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
                 }
-                ${expandedToolId === tc.id ? "ring-1 ring-blue-400" : ""}`}
+                ${expandedToolId === tc.id ? "ring-1 ring-chronicle-blue" : ""}`}
             >
               {tc.name}
             </button>
@@ -99,7 +84,7 @@ const ToolOnlyGroup = forwardRef<HTMLDivElement, ToolOnlyGroupProps>(
 
         {/* Expanded tool detail */}
         {expandedToolId && (
-          <div className="mt-2">
+          <div className="mt-2 animate-expand">
             {allToolCalls
               .filter((tc) => tc.id === expandedToolId)
               .map((tc) => (
@@ -110,7 +95,7 @@ const ToolOnlyGroup = forwardRef<HTMLDivElement, ToolOnlyGroupProps>(
                   <div className="flex items-center gap-2 mb-1">
                     <span
                       className={`font-medium ${
-                        tc.isError ? "text-red-400" : "text-emerald-400"
+                        tc.isError ? "text-red-400" : "text-chronicle-green"
                       }`}
                     >
                       {tc.name}

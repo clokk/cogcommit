@@ -9,7 +9,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
-    }
+    },
+    "./tailwind.preset": "./tailwind.preset.js"
   },
   "scripts": {
     "build": "tsc",

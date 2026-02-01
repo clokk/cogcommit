@@ -6,14 +6,19 @@ import {
   type CognitiveCommit,
   type Turn,
 } from "../api";
-import TurnView from "./TurnView";
-import ToolOnlyGroup from "./ToolOnlyGroup";
 import {
+  TurnView,
+  ToolOnlyGroup,
   formatCommitAsMarkdown,
   formatCommitAsPlainText,
   downloadFile,
   copyToClipboard,
-} from "../utils/export";
+  getSourceStyle,
+  getProjectColor,
+  getGapMinutes,
+  formatGap,
+  escapeRegex,
+} from "@cogcommit/ui";
 
 interface CommitDetailProps {
   commitId: string;
@@ -26,80 +31,6 @@ const FONT_SIZE_KEY = "cogcommit-font-size";
 const FONT_SIZES = [12, 14, 16, 18, 20] as const;
 type FontSize = (typeof FONT_SIZES)[number];
 const DEFAULT_FONT_SIZE: FontSize = 16;
-
-/**
- * Get styling for conversation source badge
- */
-function getSourceStyle(source?: string): { bg: string; text: string; label: string } {
-  switch (source) {
-    case "claude_code":
-      return { bg: "bg-blue-500/20", text: "text-blue-400", label: "Claude" };
-    case "cursor":
-      return { bg: "bg-purple-500/20", text: "text-purple-400", label: "Cursor" };
-    case "antigravity":
-      return { bg: "bg-cyan-500/20", text: "text-cyan-400", label: "Antigravity" };
-    case "codex":
-      return { bg: "bg-emerald-500/20", text: "text-emerald-400", label: "Codex" };
-    case "opencode":
-      return { bg: "bg-orange-500/20", text: "text-orange-400", label: "OpenCode" };
-    default:
-      return { bg: "bg-zinc-500/20", text: "text-zinc-400", label: "Unknown" };
-  }
-}
-
-/**
- * Generate a consistent color for a project name
- */
-function getProjectColor(name: string): { bg: string; text: string } {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-
-  const colors = [
-    { bg: "bg-chronicle-purple/20", text: "text-chronicle-purple" },
-    { bg: "bg-blue-500/20", text: "text-blue-400" },
-    { bg: "bg-emerald-500/20", text: "text-emerald-400" },
-    { bg: "bg-orange-500/20", text: "text-orange-400" },
-    { bg: "bg-pink-500/20", text: "text-pink-400" },
-    { bg: "bg-cyan-500/20", text: "text-cyan-400" },
-    { bg: "bg-yellow-500/20", text: "text-yellow-400" },
-    { bg: "bg-indigo-500/20", text: "text-indigo-400" },
-  ];
-
-  return colors[Math.abs(hash) % colors.length];
-}
-
-/**
- * Calculate gap in minutes between two timestamps
- */
-function getGapMinutes(timestamp1: string, timestamp2: string): number {
-  const t1 = new Date(timestamp1).getTime();
-  const t2 = new Date(timestamp2).getTime();
-  return Math.abs(t2 - t1) / 60000;
-}
-
-/**
- * Format gap duration for display
- */
-function formatGap(minutes: number): string {
-  if (minutes < 60) return `${Math.round(minutes)} min`;
-  const hours = Math.floor(minutes / 60);
-  const mins = Math.round(minutes % 60);
-  if (hours < 24) {
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  }
-  const days = Math.floor(hours / 24);
-  const remainingHours = hours % 24;
-  return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
-}
-
-/**
- * Escape regex special characters
- */
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 /**
  * Check if a turn is tool-only (no text content, only tool calls)
@@ -163,10 +94,21 @@ export default function CommitDetail({
     });
   }, []);
 
-  // Export handlers
+  // Export handlers - adapt types for the shared export functions
   const handleExportMarkdown = useCallback(() => {
     if (!commit) return;
-    const content = formatCommitAsMarkdown(commit);
+    // Convert to the format expected by the shared export function
+    const exportCommit = {
+      ...commit,
+      sessions: commit.sessions.map((s) => ({
+        ...s,
+        turns: s.turns.map((t) => ({
+          ...t,
+          toolCalls: t.toolCalls || [],
+        })),
+      })),
+    };
+    const content = formatCommitAsMarkdown(exportCommit as any);
     const filename = `${commit.title || "conversation"}-${commit.id.slice(0, 8)}.md`;
     downloadFile(content, filename, "text/markdown");
     setShowExportMenu(false);
@@ -174,7 +116,17 @@ export default function CommitDetail({
 
   const handleExportPlainText = useCallback(() => {
     if (!commit) return;
-    const content = formatCommitAsPlainText(commit);
+    const exportCommit = {
+      ...commit,
+      sessions: commit.sessions.map((s) => ({
+        ...s,
+        turns: s.turns.map((t) => ({
+          ...t,
+          toolCalls: t.toolCalls || [],
+        })),
+      })),
+    };
+    const content = formatCommitAsPlainText(exportCommit as any);
     const filename = `${commit.title || "conversation"}-${commit.id.slice(0, 8)}.txt`;
     downloadFile(content, filename, "text/plain");
     setShowExportMenu(false);
@@ -182,7 +134,17 @@ export default function CommitDetail({
 
   const handleCopyConversation = useCallback(async () => {
     if (!commit) return;
-    const content = formatCommitAsMarkdown(commit);
+    const exportCommit = {
+      ...commit,
+      sessions: commit.sessions.map((s) => ({
+        ...s,
+        turns: s.turns.map((t) => ({
+          ...t,
+          toolCalls: t.toolCalls || [],
+        })),
+      })),
+    };
+    const content = formatCommitAsMarkdown(exportCommit as any);
     const success = await copyToClipboard(content);
     if (success) {
       setExportCopied(true);
@@ -291,14 +253,11 @@ export default function CommitDetail({
   const scrollToItem = useCallback((index: number) => {
     const ref = itemRefs.current.get(index);
     if (ref) {
-      // Clear any pending timeout from previous scroll
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
-      // Block scroll listener from overriding during animation
       isScrollingProgrammatically.current = true;
       ref.scrollIntoView({ behavior: "smooth", block: "center" });
-      // Re-enable after animation completes (smooth scroll ~300-500ms)
       scrollTimeoutRef.current = setTimeout(() => {
         isScrollingProgrammatically.current = false;
         scrollTimeoutRef.current = null;
@@ -347,23 +306,18 @@ export default function CommitDetail({
     if (!container || renderItems.length === 0) return;
 
     const handleScroll = () => {
-      // Skip if we're doing programmatic scrolling (from arrow clicks)
       if (isScrollingProgrammatically.current) return;
 
       const containerRect = container.getBoundingClientRect();
       const containerTop = containerRect.top;
 
-      // Find the item closest to the top of the visible area
       let closestIdx = 0;
       let closestDistance = Infinity;
 
       itemRefs.current.forEach((el, idx) => {
         const rect = el.getBoundingClientRect();
-        // Distance from item top to container top (positive = below, negative = above)
         const distance = rect.top - containerTop;
 
-        // We want the item that's closest to or just past the top
-        // Prefer items that are visible (distance >= -rect.height)
         if (distance >= -rect.height && distance < closestDistance) {
           closestDistance = distance;
           closestIdx = idx;
@@ -373,7 +327,6 @@ export default function CommitDetail({
       setCurrentItemIndex(closestIdx);
     };
 
-    // Debounce scroll handler for performance
     let ticking = false;
     const scrollListener = () => {
       if (!ticking) {
@@ -409,7 +362,6 @@ export default function CommitDetail({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts when typing in inputs
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
@@ -525,9 +477,9 @@ export default function CommitDetail({
           )}
 
           {/* Stats - compact with separators */}
-          <span className="text-zinc-600">·</span>
+          <span className="text-zinc-600">\u00B7</span>
           <span className="text-zinc-500">{turnCount} turns</span>
-          <span className="text-zinc-600">·</span>
+          <span className="text-zinc-600">\u00B7</span>
           {commit.filesChanged.length > 0 ? (
             <button
               onClick={() => setShowFilesModal(true)}
@@ -572,14 +524,14 @@ export default function CommitDetail({
                   className="text-zinc-400 hover:text-white p-0.5"
                   title="Previous match (Shift+Enter)"
                 >
-                  ▲
+                  \u25B2
                 </button>
                 <button
                   onClick={goToNextMatch}
                   className="text-zinc-400 hover:text-white p-0.5"
                   title="Next match (Enter)"
                 >
-                  ▼
+                  \u25BC
                 </button>
               </div>
             )}
@@ -708,7 +660,7 @@ export default function CommitDetail({
                     ref={(el) => {
                       if (el) itemRefs.current.set(idx, el);
                     }}
-                    turns={item.turns}
+                    turns={item.turns as any}
                     searchTerm={searchTerm}
                   />
                 </React.Fragment>
@@ -730,7 +682,7 @@ export default function CommitDetail({
                   ref={(el) => {
                     if (el) itemRefs.current.set(idx, el);
                   }}
-                  turn={turn}
+                  turn={turn as any}
                   searchTerm={searchTerm}
                   isMatch={isMatch}
                   fontSize={fontSize}
@@ -750,7 +702,7 @@ export default function CommitDetail({
             className="text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             title="Previous item (k)"
           >
-            ◀
+            \u25C0
           </button>
           <span className="text-sm text-zinc-400 font-mono w-32 text-center">
             {currentItemIndex + 1} / {renderItems.length}
@@ -761,7 +713,7 @@ export default function CommitDetail({
             className="text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             title="Next item (j)"
           >
-            ▶
+            \u25B6
           </button>
         </div>
         {currentItem && (
@@ -798,7 +750,7 @@ export default function CommitDetail({
         </div>
 
         <span className="text-xs text-zinc-600">
-          j/k: turns · J/K: user only · /: search
+          j/k: turns \u00B7 J/K: user only \u00B7 /: search
         </span>
       </div>
 
@@ -847,7 +799,7 @@ export default function CommitDetail({
                 onClick={() => setShowFilesModal(false)}
                 className="text-zinc-400 hover:text-white transition-colors"
               >
-                ✕
+                \u2715
               </button>
             </div>
             <div className="overflow-y-auto flex-1 bg-zinc-900 rounded-lg p-4">

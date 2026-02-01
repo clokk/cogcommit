@@ -2,46 +2,13 @@
 
 import React from "react";
 import type { CognitiveCommit } from "@cogcommit/types";
+import { formatTime, getProjectColor } from "./utils/formatters";
 
 interface CommitCardProps {
   commit: CognitiveCommit;
   isSelected?: boolean;
   onClick?: () => void;
   showProjectBadge?: boolean;
-}
-
-function formatTime(iso: string): string {
-  const date = new Date(iso);
-  return date.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-}
-
-/**
- * Generate a consistent color for a project name
- */
-function getProjectColor(name: string): { bg: string; text: string } {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-
-  const colors = [
-    { bg: "bg-purple-500/20", text: "text-purple-400" },
-    { bg: "bg-blue-500/20", text: "text-blue-400" },
-    { bg: "bg-emerald-500/20", text: "text-emerald-400" },
-    { bg: "bg-orange-500/20", text: "text-orange-400" },
-    { bg: "bg-pink-500/20", text: "text-pink-400" },
-    { bg: "bg-cyan-500/20", text: "text-cyan-400" },
-    { bg: "bg-yellow-500/20", text: "text-yellow-400" },
-    { bg: "bg-indigo-500/20", text: "text-indigo-400" },
-  ];
-
-  return colors[Math.abs(hash) % colors.length];
 }
 
 function getFirstUserMessage(commit: CognitiveCommit): string | null {
@@ -63,7 +30,9 @@ export default function CommitCard({
   showProjectBadge = false,
 }: CommitCardProps) {
   const hasGitHash = !!commit.gitHash;
-  const borderColor = hasGitHash ? "border-emerald-400" : "border-amber-400";
+  const borderColor = hasGitHash
+    ? "border-chronicle-green"
+    : "border-chronicle-amber";
   const turnCount =
     commit.turnCount ||
     commit.sessions.reduce((sum, s) => sum + s.turns.length, 0);
@@ -76,7 +45,7 @@ export default function CommitCard({
       onClick={onClick}
       className={`relative rounded-lg p-3 cursor-pointer transition-all border-l-2 ${borderColor} ${
         isSelected
-          ? "bg-zinc-800/80 ring-1 ring-blue-400/50"
+          ? "bg-zinc-800/80 ring-1 ring-chronicle-blue/50"
           : "bg-zinc-900/50 hover:bg-zinc-800/50"
       }`}
     >
@@ -96,18 +65,21 @@ export default function CommitCard({
         <div className="flex items-center gap-2">
           {/* Git hash or status */}
           {commit.gitHash ? (
-            <span className="font-mono text-sm text-emerald-400">
+            <span className="font-mono text-sm text-chronicle-green">
               [{commit.gitHash.substring(0, 7)}]
             </span>
           ) : (
-            <span className="font-mono text-sm text-amber-400">
+            <span className="font-mono text-sm text-chronicle-amber">
               [uncommitted]
             </span>
           )}
 
           {/* Parallel indicator */}
           {commit.parallel && (
-            <span className="text-purple-400 text-xs" title="Parallel sessions">
+            <span
+              className="text-chronicle-purple text-xs"
+              title="Parallel sessions"
+            >
               ||
             </span>
           )}

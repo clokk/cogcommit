@@ -2,6 +2,14 @@
 
 import React, { useState, forwardRef } from "react";
 import type { Turn, ToolCall } from "@cogcommit/types";
+import {
+  formatModelName,
+  formatRelativeTime,
+  formatAbsoluteTime,
+  escapeRegex,
+  formatToolInput,
+} from "./utils/formatters";
+import { formatTurnAsPlainText, copyToClipboard } from "./utils/export";
 
 interface TurnViewProps {
   turn: Turn;
@@ -12,22 +20,6 @@ interface TurnViewProps {
 
 const COLLAPSE_THRESHOLD = 500;
 const PREVIEW_LENGTH = 300;
-
-/**
- * Format model name to short display form
- */
-function formatModelName(model?: string): string {
-  if (!model) return "Agent";
-  if (model.includes("opus-4-5")) return "Opus 4.5";
-  if (model.includes("opus-4")) return "Opus 4";
-  if (model.includes("opus")) return "Opus";
-  if (model.includes("sonnet-4")) return "Sonnet 4";
-  if (model.includes("3-5-sonnet") || model.includes("3.5-sonnet"))
-    return "Sonnet 3.5";
-  if (model.includes("sonnet")) return "Sonnet";
-  if (model.includes("haiku")) return "Haiku";
-  return model.split("-").pop() || "Agent";
-}
 
 /**
  * Get tool summary for hover tooltip
@@ -47,13 +39,6 @@ function getToolSummary(tc: ToolCall): string {
 }
 
 /**
- * Escape regex special characters
- */
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/**
  * Highlight search matches in text
  */
 function highlightMatches(text: string, term: string): React.ReactNode {
@@ -62,7 +47,7 @@ function highlightMatches(text: string, term: string): React.ReactNode {
   const parts = text.split(regex);
   return parts.map((part, i) =>
     regex.test(part) ? (
-      <mark key={i} className="bg-blue-400/30 text-white rounded px-0.5">
+      <mark key={i} className="bg-chronicle-blue/30 text-white rounded px-0.5">
         {part}
       </mark>
     ) : (
@@ -71,63 +56,11 @@ function highlightMatches(text: string, term: string): React.ReactNode {
   );
 }
 
-/**
- * Format relative time
- */
-function formatRelativeTime(iso: string): string {
-  const date = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return "yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
-
-  return date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-}
-
-/**
- * Format absolute time for tooltip
- */
-function formatAbsoluteTime(iso: string): string {
-  const date = new Date(iso);
-  return date.toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-}
-
-function formatToolInput(input: Record<string, unknown>): string {
-  if ("command" in input) {
-    return `command: ${input.command}`;
-  }
-  if ("file_path" in input) {
-    return `file: ${input.file_path}`;
-  }
-  if ("pattern" in input) {
-    return `pattern: ${input.pattern}`;
-  }
-  return JSON.stringify(input, null, 2);
-}
-
 const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
   function TurnView({ turn, searchTerm, isMatch, fontSize = 16 }, ref) {
     const [expanded, setExpanded] = useState(false);
     const [expandedToolId, setExpandedToolId] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
 
     const isUser = turn.role === "user";
     const hasToolCalls = turn.toolCalls && turn.toolCalls.length > 0;
@@ -138,12 +71,21 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
         ? turn.content.slice(0, PREVIEW_LENGTH)
         : turn.content;
 
+    const handleCopy = async () => {
+      const text = formatTurnAsPlainText(turn);
+      const success = await copyToClipboard(text);
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }
+    };
+
     return (
       <div
         ref={ref}
         className={`group rounded-lg p-4 border-l-2 transition-opacity ${
           isUser
-            ? "bg-blue-500/5 border-blue-400"
+            ? "bg-chronicle-blue/5 border-chronicle-blue"
             : "bg-zinc-900/50 border-zinc-700"
         } ${searchTerm && !isMatch ? "opacity-40" : ""}`}
       >
@@ -151,7 +93,7 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
         <div className="flex items-center gap-2 mb-2">
           <span
             className={`text-sm font-medium ${
-              isUser ? "text-blue-400" : "text-zinc-400"
+              isUser ? "text-chronicle-blue" : "text-zinc-400"
             }`}
           >
             {isUser ? "User" : formatModelName(turn.model)}
@@ -162,6 +104,38 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
           >
             {formatRelativeTime(turn.timestamp)}
           </span>
+          {/* Copy button */}
+          <button
+            onClick={handleCopy}
+            className="ml-auto p-1 text-zinc-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+            title="Copy turn"
+          >
+            {copied ? (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="text-chronicle-green"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            )}
+          </button>
         </div>
 
         {/* Content */}
@@ -186,7 +160,7 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
         {shouldCollapse && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="mt-2 text-blue-400 text-sm hover:text-blue-300 transition-colors"
+            className="mt-2 text-chronicle-blue text-sm hover:text-chronicle-blue/80 transition-colors"
           >
             {expanded
               ? "Show less"
@@ -211,7 +185,7 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
                         ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                         : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
                     }
-                    ${expandedToolId === tc.id ? "ring-1 ring-blue-400" : ""}`}
+                    ${expandedToolId === tc.id ? "ring-1 ring-chronicle-blue" : ""}`}
                 >
                   {tc.name}
                 </button>
@@ -220,7 +194,7 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
 
             {/* Expanded tool detail */}
             {expandedToolId && (
-              <div className="mt-2">
+              <div className="mt-2 animate-expand">
                 {turn.toolCalls!
                   .filter((tc) => tc.id === expandedToolId)
                   .map((tc) => (
@@ -231,7 +205,7 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
                       <div className="flex items-center gap-2 mb-1">
                         <span
                           className={`font-medium ${
-                            tc.isError ? "text-red-400" : "text-emerald-400"
+                            tc.isError ? "text-red-400" : "text-chronicle-green"
                           }`}
                         >
                           {tc.name}
