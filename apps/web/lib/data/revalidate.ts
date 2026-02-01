@@ -1,18 +1,14 @@
 "use server";
 
-import { revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 
 /**
- * Invalidate the server-side cache for a user's commits.
- * Call this after mutations (title updates, deletions, etc.)
+ * Revalidate the dashboard page after mutations.
+ * This clears the Next.js router cache for the dashboard route.
+ *
+ * Note: Primary cache invalidation is handled by React Query on the client.
+ * This server action is for cases where we need to force a full page refresh.
  */
-export async function revalidateUserCommits(userId: string) {
-  revalidateTag(`user-commits-${userId}`);
-}
-
-/**
- * Invalidate all commits cache (admin use, deployment, etc.)
- */
-export async function revalidateAllCommits() {
-  revalidateTag("commits");
+export async function revalidateDashboard() {
+  revalidatePath("/dashboard");
 }

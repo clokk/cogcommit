@@ -103,80 +103,58 @@ Skeleton loaders create **perceived performance**. Even if the actual load time 
 
 ---
 
-## Layer 2: Server-Side Caching
+## Layer 2: Server-Side Request Memoization
 
-**Problem:** Every page load queries the database, even if the data hasn't changed.
+**Problem:** During a single page render, the same data might be requested multiple times by different components.
 
-**Solution:** Cache database results on the server for 1 hour.
+**Solution:** Use React's `cache()` to deduplicate requests within a single render.
 
 ### How It Works
 
-Next.js provides `unstable_cache` (the "unstable" prefix just means the API might change in future versions—it's production-ready). This function wraps any async operation and caches its result.
+React provides a `cache()` function that memoizes async functions for the duration of a single request. If the same function is called multiple times with the same arguments during a render, it only executes once.
 
 **`lib/data/commits.ts`:**
 
 ```tsx
-import { unstable_cache } from "next/cache";
+import { cache } from "react";
 
-export async function getCachedCommits(userId: string, project?: string | null) {
-  const cacheKey = `commits-${userId}-${project || "all"}`;
+export const getCachedCommits = cache(
+  async (userId: string, project?: string | null) => {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("cognitive_commits")
+      .select("*, sessions(*)")
+      .eq("user_id", userId);
 
-  return unstable_cache(
-    async () => {
-      // This function only runs on cache MISS
-      const supabase = await createClient();
-      const { data } = await supabase
-        .from("cognitive_commits")
-        .select("*, sessions(*)")
-        .eq("user_id", userId);
-
-      return transformAndFilter(data);
-    },
-    [cacheKey],  // Cache key - unique per user and project
-    {
-      tags: [`user-commits-${userId}`, "commits"],  // For invalidation
-      revalidate: 3600,  // 1 hour in seconds
-    }
-  )();  // Note: we immediately invoke the returned function
-}
+    return transformAndFilter(data);
+  }
+);
 ```
 
-### Understanding Cache Keys
+### Why Not `unstable_cache`?
 
-The cache key determines when cached data is reused:
+Next.js also provides `unstable_cache` for persistent server-side caching across requests. However, it has a limitation: functions inside `unstable_cache` run in a static context without access to request-specific data like cookies.
 
-```
-commits-user123-all      → All commits for user123
-commits-user123-myproject → Commits filtered to "myproject"
-commits-user456-all      → Different user, different cache
-```
+Since our Supabase client needs cookies for authentication, we can't use `unstable_cache` directly. Instead, we rely on:
 
-Each unique key gets its own cached value. This ensures users never see each other's data.
-
-### Understanding Cache Tags
-
-Tags are labels we attach to cached data for bulk invalidation:
-
-```tsx
-tags: [`user-commits-${userId}`, "commits"]
-```
-
-- `user-commits-user123` → Invalidate just this user's cache
-- `commits` → Invalidate ALL users' commit caches (nuclear option)
+1. **React's `cache()`** for request-level deduplication
+2. **React Query** for cross-request caching on the client
 
 ### The Request Flow
 
-**First visit (cache miss):**
+**Multiple components requesting the same data:**
 ```
-User → Server → unstable_cache → Database → Transform → Cache → Response
+Component A calls getCachedCommits(userId)
+  → cache() executes function → Database query → Returns data
+
+Component B calls getCachedCommits(userId)
+  → cache() returns memoized result → No database query
+
+Component C calls getCachedCommits(userId)
+  → cache() returns memoized result → No database query
 ```
 
-**Second visit within 1 hour (cache hit):**
-```
-User → Server → unstable_cache → [cached data] → Response
-```
-
-The database is never touched on cache hits, making responses nearly instant.
+All three components get the same data from a single database query.
 
 ---
 
@@ -330,58 +308,65 @@ This creates a snappy, app-like feel where changes appear instantly.
 
 **Problem:** Cached data becomes stale when users make changes.
 
-**Solution:** Explicitly clear caches when mutations happen.
+**Solution:** React Query handles cache invalidation automatically through mutations.
 
-### The Two Caches
+### How React Query Manages Staleness
 
-Remember, we have two separate caches:
+React Query's cache invalidation is built into the mutation flow:
 
-1. **Server cache** (`unstable_cache`) - Lives on the server, persists across requests
-2. **Client cache** (React Query) - Lives in the browser, per-session
+```tsx
+export function useUpdateCommitTitle() {
+  const queryClient = useQueryClient();
 
-When a user updates something, we need to invalidate both.
+  return useMutation({
+    mutationFn: async ({ commitId, title }) => {
+      return fetch(`/api/commits/${commitId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ title }),
+      });
+    },
 
-### Server-Side Invalidation
+    // After mutation completes (success or failure)
+    onSettled: () => {
+      // Mark all commit queries as stale and refetch
+      queryClient.invalidateQueries({ queryKey: commitKeys.all });
+    },
+  });
+}
+```
+
+### The Invalidation Flow
+
+When a user edits a commit title:
+
+```
+1. User types new title
+2. Optimistic update shows change immediately
+3. API request sent to server
+4. Server updates database
+5. onSettled triggers
+6. React Query invalidates all commit queries
+7. Background refetch gets fresh data
+8. UI updates with confirmed data
+```
+
+### Optional: Server-Side Path Revalidation
+
+For cases where you need to force a full page refresh (rare), we provide a server action:
 
 **`lib/data/revalidate.ts`:**
 
 ```tsx
 "use server";
 
-import { revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 
-export async function revalidateUserCommits(userId: string) {
-  // This clears all cached data tagged with this user's tag
-  revalidateTag(`user-commits-${userId}`);
+export async function revalidateDashboard() {
+  revalidatePath("/dashboard");
 }
 ```
 
-We call this in the API route after a successful update:
-
-```tsx
-// api/commits/[id]/route.ts
-export async function PATCH(request, { params }) {
-  // ... update the database ...
-
-  // Clear server cache for this user
-  await revalidateUserCommits(user.id);
-
-  return NextResponse.json({ success: true });
-}
-```
-
-### Client-Side Invalidation
-
-React Query handles this in the mutation's `onSettled` callback:
-
-```tsx
-onSettled: () => {
-  // Refetch all commit queries to get fresh data
-  queryClient.invalidateQueries({ queryKey: commitKeys.all });
-}
-```
-
-This runs whether the mutation succeeded or failed, ensuring the cache stays in sync.
+This clears the Next.js router cache, forcing a fresh server render on the next navigation.
 
 ### HTTP Cache Headers
 
@@ -414,26 +399,27 @@ Let's trace through a complete user journey:
 User navigates to /dashboard
   → loading.tsx shows skeleton instantly
   → page.tsx calls getCachedCommits()
-    → Cache miss → query database → cache result → return data
+    → Query database → transform data → return
   → DashboardView renders with server data
-  → React Query stores data in client cache
+  → React Query stores data in client cache (5min staleTime)
 ```
 
-### 2. Page Refresh (within 1 hour)
+### 2. Page Refresh
 ```
 User refreshes the page
   → loading.tsx shows skeleton
   → page.tsx calls getCachedCommits()
-    → Cache HIT → return cached data (no database query)
-  → DashboardView renders instantly
+    → Query database → return fresh data
+  → DashboardView renders with new server data
+  → React Query updates client cache
 ```
 
 ### 3. Navigate Away and Back (within 5 minutes)
 ```
 User goes to /settings, then back to /dashboard
-  → React Query has cached data
+  → React Query has cached data (still fresh)
   → DashboardView renders instantly (no loading state)
-  → Background refetch happens if data is stale
+  → No server request needed
 ```
 
 ### 4. User Edits a Title
@@ -443,16 +429,17 @@ User changes a commit title
   → UI updates immediately (optimistic update)
   → API call happens in background
   → Server updates database
-  → Server invalidates unstable_cache
   → Mutation's onSettled invalidates React Query cache
-  → Fresh data fetched in background
+  → Background refetch gets fresh data from server
 ```
 
-### 5. Opening Dashboard in New Tab
+### 5. Window Focus After 5+ Minutes
 ```
-User opens /dashboard in new tab
-  → Server cache hit (same user, within 1 hour)
-  → Shows fresh data including the title change
+User switches to another tab, comes back after 6 minutes
+  → React Query detects data is stale
+  → Shows cached data immediately
+  → Triggers background refetch
+  → UI updates silently when fresh data arrives
 ```
 
 ---
