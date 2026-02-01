@@ -18,14 +18,14 @@ export default function DashboardLoading() {
     >
       {/* Header skeleton */}
       <div className="h-14 border-b border-border bg-panel flex items-center justify-between px-4 relative overflow-hidden">
-        <Shimmer className="absolute inset-0" />
+        <Shimmer />
         <div className="flex items-center gap-4">
-          <div className="h-6 w-6 bg-subtle/30 rounded" />
-          <div className="h-5 w-32 bg-subtle/30 rounded" />
+          <div className="h-6 w-6 bg-subtle/40 rounded animate-pulse" />
+          <div className="h-5 w-32 bg-subtle/40 rounded animate-pulse" />
         </div>
         <div className="flex items-center gap-3">
-          <div className="h-8 w-24 bg-subtle/30 rounded" />
-          <div className="h-8 w-8 bg-subtle/30 rounded-full" />
+          <div className="h-8 w-24 bg-subtle/40 rounded animate-pulse" />
+          <div className="h-8 w-8 bg-subtle/40 rounded-full animate-pulse" />
         </div>
       </div>
 
@@ -37,12 +37,12 @@ export default function DashboardLoading() {
         >
           {/* Sidebar header skeleton */}
           <div className="h-10 border-b border-border flex items-center justify-between px-3 relative overflow-hidden">
-            <Shimmer className="absolute inset-0" />
+            <Shimmer />
             <div className="flex items-center gap-2">
-              <div className="h-4 w-16 bg-subtle/30 rounded" />
-              <div className="h-5 w-8 bg-subtle/30 rounded-full" />
+              <div className="h-4 w-16 bg-subtle/40 rounded animate-pulse" />
+              <div className="h-5 w-8 bg-subtle/40 rounded-full animate-pulse" />
             </div>
-            <div className="h-6 w-6 bg-subtle/30 rounded" />
+            <div className="h-6 w-6 bg-subtle/40 rounded animate-pulse" />
           </div>
 
           {/* Commit list skeleton */}
@@ -58,14 +58,14 @@ export default function DashboardLoading() {
         <div className="flex-1 bg-panel-alt overflow-hidden flex flex-col">
           {/* Detail header skeleton */}
           <div className="h-16 border-b border-border flex items-center justify-between px-6 relative overflow-hidden">
-            <Shimmer className="absolute inset-0" />
+            <Shimmer />
             <div className="flex-1">
-              <div className="h-6 w-64 bg-subtle/30 rounded mb-2" />
-              <div className="h-4 w-48 bg-subtle/30 rounded" />
+              <div className="h-6 w-64 bg-subtle/40 rounded mb-2 animate-pulse" />
+              <div className="h-4 w-48 bg-subtle/40 rounded animate-pulse" />
             </div>
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-subtle/30 rounded" />
-              <div className="h-8 w-8 bg-subtle/30 rounded" />
+              <div className="h-8 w-8 bg-subtle/40 rounded animate-pulse" />
+              <div className="h-8 w-8 bg-subtle/40 rounded animate-pulse" />
             </div>
           </div>
 
@@ -90,11 +90,11 @@ export default function DashboardLoading() {
                 visible: { opacity: 1, y: 0 },
               }}
             >
-              <div className="h-8 w-8 bg-subtle/30 rounded-full flex-shrink-0" />
+              <div className="h-8 w-8 bg-subtle/40 rounded-full flex-shrink-0 animate-pulse" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 w-24 bg-subtle/30 rounded" />
-                <div className="h-20 w-full bg-subtle/30 rounded-lg relative overflow-hidden">
-                  <Shimmer className="absolute inset-0" />
+                <div className="h-4 w-24 bg-subtle/40 rounded animate-pulse" />
+                <div className="h-20 w-full bg-subtle/40 rounded-lg relative overflow-hidden animate-pulse">
+                  <Shimmer />
                 </div>
               </div>
             </motion.div>
@@ -107,11 +107,11 @@ export default function DashboardLoading() {
                 visible: { opacity: 1, y: 0 },
               }}
             >
-              <div className="h-8 w-8 bg-chronicle-blue/30 rounded-full flex-shrink-0" />
+              <div className="h-8 w-8 bg-chronicle-blue/30 rounded-full flex-shrink-0 animate-pulse" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 w-20 bg-subtle/30 rounded" />
-                <div className="h-32 w-full bg-subtle/30 rounded-lg relative overflow-hidden">
-                  <Shimmer className="absolute inset-0" />
+                <div className="h-4 w-20 bg-subtle/40 rounded animate-pulse" />
+                <div className="h-32 w-full bg-subtle/40 rounded-lg relative overflow-hidden animate-pulse">
+                  <Shimmer />
                 </div>
               </div>
             </motion.div>
@@ -124,11 +124,11 @@ export default function DashboardLoading() {
                 visible: { opacity: 1, y: 0 },
               }}
             >
-              <div className="h-8 w-8 bg-subtle/30 rounded-full flex-shrink-0" />
+              <div className="h-8 w-8 bg-subtle/40 rounded-full flex-shrink-0 animate-pulse" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 w-24 bg-subtle/30 rounded" />
-                <div className="h-16 w-3/4 bg-subtle/30 rounded-lg relative overflow-hidden">
-                  <Shimmer className="absolute inset-0" />
+                <div className="h-4 w-24 bg-subtle/40 rounded animate-pulse" />
+                <div className="h-16 w-3/4 bg-subtle/40 rounded-lg relative overflow-hidden animate-pulse">
+                  <Shimmer />
                 </div>
               </div>
             </motion.div>
