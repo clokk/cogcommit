@@ -1,0 +1,43 @@
+{
+  "name": "@cogcommit/supabase",
+  "version": "0.1.0",
+  "description": "Shared Supabase client and queries for CogCommit",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "require": "./dist/client.js"
+    },
+    "./queries": {
+      "types": "./dist/queries.d.ts",
+      "import": "./dist/queries.js",
+      "require": "./dist/queries.js"
+    },
+    "./transforms": {
+      "types": "./dist/transforms.d.ts",
+      "import": "./dist/transforms.js",
+      "require": "./dist/transforms.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.93.3",
+    "@supabase/ssr": "^0.5.0",
+    "@cogcommit/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

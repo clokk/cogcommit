@@ -1,0 +1,144 @@
+/**
+ * Commit API routes
+ */
+
+import { Hono } from "hono";
+import { AgentlogsDB } from "../../storage/db";
+import type { CognitiveCommit } from "../../models/types";
+
+interface CommitRouteOptions {
+  global?: boolean;
+}
+
+export function createCommitRoutes(projectPath: string, options: CommitRouteOptions = {}): Hono {
+  const app = new Hono();
+  const dbOptions = { rawStoragePath: options.global };
+
+  // GET /api/commits - List all commits, optionally filtered by project
+  app.get("/", async (c) => {
+    const db = new AgentlogsDB(projectPath, dbOptions);
+    try {
+      // Check for project filter
+      const projectFilter = c.req.query("project");
+
+      let commits;
+      if (projectFilter) {
+        commits = db.getCommitsByProject(projectFilter);
+      } else {
+        commits = db.getAllCommits();
+      }
+
+      // Filter out empty and warmup commits
+      commits = commits.filter((commit) => {
+        // Filter out 0-turn commits
+        const totalTurns = commit.sessions.reduce((sum, s) => sum + s.turns.length, 0);
+        if (totalTurns === 0) return false;
+
+        // Filter out warmup commits (Claude Code internal)
+        const firstUserMessage = commit.sessions[0]?.turns[0]?.content || "";
+        if (firstUserMessage.toLowerCase().includes("warmup")) return false;
+
+        return true;
+      });
+
+      // Add turn count for each commit
+      const commitsWithTurnCount = commits.map((commit) => ({
+        ...commit,
+        turnCount: commit.sessions.reduce((sum, s) => sum + s.turns.length, 0),
+      }));
+
+      return c.json({ commits: commitsWithTurnCount });
+    } finally {
+      db.close();
+    }
+  });
+
+  // GET /api/commits/:id - Get single commit with full details
+  app.get("/:id", async (c) => {
+    const id = c.req.param("id");
+    const db = new AgentlogsDB(projectPath, dbOptions);
+
+    try {
+      const commit = db.getCommit(id);
+      if (!commit) {
+        return c.json({ error: "Commit not found" }, 404);
+      }
+
+      return c.json({ commit });
+    } finally {
+      db.close();
+    }
+  });
+
+  // PATCH /api/commits/:id - Update commit (title, hidden)
+  app.patch("/:id", async (c) => {
+    const id = c.req.param("id");
+    const body = await c.req.json<{
+      title?: string;
+      hidden?: boolean;
+      displayOrder?: number;
+    }>();
+
+    const db = new AgentlogsDB(projectPath, dbOptions);
+
+    try {
+      const commit = db.getCommit(id);
+      if (!commit) {
+        return c.json({ error: "Commit not found" }, 404);
+      }
+
+      const success = db.updateCommit(id, body);
+      if (!success) {
+        return c.json({ error: "No updates provided" }, 400);
+      }
+
+      const updated = db.getCommit(id);
+      return c.json({ commit: updated });
+    } finally {
+      db.close();
+    }
+  });
+
+  // DELETE /api/commits/:id - Delete commit
+  app.delete("/:id", async (c) => {
+    const id = c.req.param("id");
+    const db = new AgentlogsDB(projectPath, dbOptions);
+
+    try {
+      const commit = db.getCommit(id);
+      if (!commit) {
+        return c.json({ error: "Commit not found" }, 404);
+      }
+
+      const success = db.deleteCommit(id);
+      return c.json({ success });
+    } finally {
+      db.close();
+    }
+  });
+
+  // POST /api/commits/bulk - Bulk update commits
+  app.post("/bulk", async (c) => {
+    const body = await c.req.json<{
+      ids: string[];
+      updates: {
+        hidden?: boolean;
+      };
+    }>();
+
+    if (!body.ids || body.ids.length === 0) {
+      return c.json({ error: "No commit IDs provided" }, 400);
+    }
+
+    const db = new AgentlogsDB(projectPath, dbOptions);
+
+    try {
+      const updated = db.bulkUpdateCommits(body.ids, body.updates);
+      return c.json({ updated });
+    } finally {
+      db.close();
+    }
+  });
+
+  return app;
+}

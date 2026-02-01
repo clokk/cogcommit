@@ -1,0 +1,137 @@
+"use client";
+
+import React from "react";
+import type { CognitiveCommit } from "@cogcommit/types";
+
+interface CommitCardProps {
+  commit: CognitiveCommit;
+  isSelected?: boolean;
+  onClick?: () => void;
+  showProjectBadge?: boolean;
+}
+
+function formatTime(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+/**
+ * Generate a consistent color for a project name
+ */
+function getProjectColor(name: string): { bg: string; text: string } {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const colors = [
+    { bg: "bg-purple-500/20", text: "text-purple-400" },
+    { bg: "bg-blue-500/20", text: "text-blue-400" },
+    { bg: "bg-emerald-500/20", text: "text-emerald-400" },
+    { bg: "bg-orange-500/20", text: "text-orange-400" },
+    { bg: "bg-pink-500/20", text: "text-pink-400" },
+    { bg: "bg-cyan-500/20", text: "text-cyan-400" },
+    { bg: "bg-yellow-500/20", text: "text-yellow-400" },
+    { bg: "bg-indigo-500/20", text: "text-indigo-400" },
+  ];
+
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function getFirstUserMessage(commit: CognitiveCommit): string | null {
+  for (const session of commit.sessions) {
+    for (const turn of session.turns) {
+      if (turn.role === "user" && turn.content) {
+        const content = turn.content.trim();
+        return content.length > 60 ? content.substring(0, 60) + "..." : content;
+      }
+    }
+  }
+  return null;
+}
+
+export default function CommitCard({
+  commit,
+  isSelected = false,
+  onClick,
+  showProjectBadge = false,
+}: CommitCardProps) {
+  const hasGitHash = !!commit.gitHash;
+  const borderColor = hasGitHash ? "border-emerald-400" : "border-amber-400";
+  const turnCount =
+    commit.turnCount ||
+    commit.sessions.reduce((sum, s) => sum + s.turns.length, 0);
+  const projectColor = commit.projectName
+    ? getProjectColor(commit.projectName)
+    : null;
+
+  return (
+    <div
+      onClick={onClick}
+      className={`relative rounded-lg p-3 cursor-pointer transition-all border-l-2 ${borderColor} ${
+        isSelected
+          ? "bg-zinc-800/80 ring-1 ring-blue-400/50"
+          : "bg-zinc-900/50 hover:bg-zinc-800/50"
+      }`}
+    >
+      <div className="flex-1 min-w-0">
+        {/* Project badge (when showing all projects) */}
+        {showProjectBadge && commit.projectName && projectColor && (
+          <div className="mb-1">
+            <span
+              className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${projectColor.bg} ${projectColor.text}`}
+              title={`Project: ${commit.projectName}`}
+            >
+              {commit.projectName}
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          {/* Git hash or status */}
+          {commit.gitHash ? (
+            <span className="font-mono text-sm text-emerald-400">
+              [{commit.gitHash.substring(0, 7)}]
+            </span>
+          ) : (
+            <span className="font-mono text-sm text-amber-400">
+              [uncommitted]
+            </span>
+          )}
+
+          {/* Parallel indicator */}
+          {commit.parallel && (
+            <span className="text-purple-400 text-xs" title="Parallel sessions">
+              ||
+            </span>
+          )}
+        </div>
+
+        {/* Title or first user message */}
+        <div className="text-sm text-zinc-300 mt-1 truncate">
+          {commit.title || getFirstUserMessage(commit) || "No content"}
+        </div>
+
+        {/* Stats */}
+        <div className="flex items-center gap-3 mt-1 text-xs text-zinc-500">
+          <span>{turnCount} turns</span>
+          <span>
+            {commit.sessions.length} session
+            {commit.sessions.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {/* Time */}
+        <div className="text-xs text-zinc-600 mt-1">
+          {formatTime(commit.closedAt)}
+        </div>
+      </div>
+    </div>
+  );
+}

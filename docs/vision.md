@@ -1,6 +1,6 @@
-# Agentlogs
+# CogCommit
 
-> Git for your agent conversations. GitHub for syncing them everywhere.
+> Document your AI-assisted development with cognitive commits.
 
 ## The Problem
 
@@ -12,89 +12,77 @@ Git tracks *what* changed. Nothing tracks *how it got built*.
 
 ## The Solution
 
-Agentlogs is a **repository for your agent conversations** — like git is for code.
+CogCommit captures **cognitive commits** — the unit of work between git commits that shows the reasoning, exploration, and decisions that led to the code.
 
-- **Local-first**: Your conversations are stored locally in SQLite, always accessible
-- **Cloud-synced**: Push to the cloud to access from any machine (like pushing to GitHub)
-- **Linked to code**: Conversations are tied to the git commits they produced
+- **Local-first**: Your commits are stored locally in SQLite, always accessible
+- **Cloud-synced**: Push to the cloud to access from any machine
+- **Linked to code**: Cognitive commits are tied to the git commits they produced
 
 ```
-agentlogs import    # Import all Claude Code history
-agentlogs studio    # Browse your conversations
-agentlogs push      # Sync to cloud
+cogcommit import      # Import all Claude Code history
+cogcommit dashboard   # Browse your cognitive commits
+cogcommit push        # Sync to cloud
 ```
 
-### The Git/GitHub Model
+## What is a Cognitive Commit?
 
-| Git | Agentlogs |
-|-----|-----------|
-| `git init` | `agentlogs init` |
-| `git add` + `git commit` | Automatic: daemon captures conversations |
-| `git log` | `agentlogs studio` |
-| `git push` | `agentlogs push` |
-| `git pull` | `agentlogs pull` |
-| GitHub | Agentlogs Cloud |
+The **Cognitive Commit** is the new unit of work. It captures everything between git commits:
 
-Your conversations live locally first. Cloud sync is optional but powerful — access your full history from any machine, share chronicles publicly, and never lose context.
+| Git | Cognitive Commit |
+|-----|------------------|
+| Many file changes → one commit | Many turns → one cognitive commit |
+| Commit message = summary | First prompt = intent |
+| `git diff` shows what changed | Turns show how it evolved |
+
+**What closes a Cognitive Commit:**
+1. **Git commit** - links directly to a hash
+2. **Session end** - work done but not committed
+3. **Explicit close** - user manually marks boundary
 
 ## The Data Model
 
-### Cognitive Commit
-
-The unit of work between git commits:
+### CognitiveCommit
 
 ```
 CognitiveCommit
 ├── id
 ├── gitHash (nullable)     # Links to git commit if one was made
-├── closedBy               # "git_commit" | "session_end"
+├── closedBy               # "git_commit" | "session_end" | "explicit"
 ├── startedAt / closedAt
 ├── sessions[]             # One or more Claude sessions
 ├── filesRead[]            # Paths referenced
 └── filesChanged[]         # Paths with diffs
 ```
 
-A cognitive commit closes when:
-1. **Git commit** — Natural boundary, links directly to hash
-2. **Session end** — Work done but uncommitted
-
-### Why "Cognitive Commit"?
-
-| Git Commit | Cognitive Commit |
-|------------|------------------|
-| Many file changes → one commit | Many conversation turns → one cognitive commit |
-| Commit message = summary | Conversation = full context |
-| `git diff` shows what changed | Turns show how it evolved |
-| `git log` shows history | Timeline of cognitive commits |
-
 ## Architecture
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Parser    │ →   │   Storage   │ →   │   Studio    │
+│   Parser    │ →   │   Storage   │ →   │  Dashboard  │
 │             │     │             │     │             │
 │ Reads JSONL │     │   SQLite    │     │  React UI   │
 │ from Claude │     │   + API     │     │  to browse  │
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
-**Global mode (default):** All projects in one database at `~/.agentlogs/`
+**Global mode (default):** All projects in one database at `~/.cogcommit/`
 
-**Project mode:** Scoped to single project at `.agentlogs/`
+**Project mode:** Scoped to single project at `.cogcommit/`
 
 ## CLI
 
 ```bash
 # Import Claude Code history
-agentlogs import             # All projects (global)
-agentlogs import --project   # Current project only
+cogcommit import             # All projects (global)
+cogcommit import --project   # Current project only
 
-# Browse conversations
-agentlogs studio             # Open web UI
+# Browse cognitive commits
+cogcommit dashboard          # Open local web UI
 
-# Utilities
-agentlogs list               # Show available projects
-agentlogs status             # Show database stats
+# Cloud sync
+cogcommit login              # GitHub OAuth
+cogcommit push               # Push to cloud
+cogcommit pull               # Pull from cloud
 ```
 
 ## What Gets Stored
@@ -123,19 +111,23 @@ Anyone who uses Claude Code and wants to:
 ### Core
 - Parse Claude Code session logs into cognitive commits
 - SQLite storage with full conversation history
-- Studio UI for browsing and curating conversations
+- Dashboard UI for browsing and curating commits
 - Screenshot capture for visual context
 - Multi-agent support (Claude Code, Cursor, Antigravity, Codex, OpenCode)
 
 ### Cloud Sync
-- `agentlogs login` — GitHub OAuth authentication
-- `agentlogs push` / `agentlogs pull` — Manual sync
-- Continuous sync — Background sync daemon
-- Cross-machine access — Your conversations anywhere
+- `cogcommit login` — GitHub OAuth authentication
+- `cogcommit push` / `cogcommit pull` — Manual sync
+- Cross-machine access — Your cognitive commits anywhere
+
+### Web Platform
+- Browse synced commits at cogcommit.com
+- Filter by project, source, or date
+- Same GitHub account as CLI
 
 ## Future Possibilities
 
-These are ideas, not commitments. The core value is the repository.
+These are ideas, not commitments. The core value is capturing cognitive commits.
 
 ### Near-term
 - Full-text search across all conversations
@@ -144,16 +136,10 @@ These are ideas, not commitments. The core value is the repository.
 - Conflict resolution UI
 
 ### Further out
-- Public sharing (opt-in chronicles)
+- Public sharing (opt-in portfolios)
 - Team/org mode with shared repositories
 - End-to-end encryption option
 - Aggregate analytics (opt-in)
-
-### Someday/maybe
-- Live rebuild of product state at each commit
-- Comparison view between commits
-- Integration with Agent Trace standard
-- Hiring/assessment use case
 
 ---
 
@@ -184,17 +170,18 @@ Indices on: git hash, timestamps, project name, sync status
 
 | File | Purpose |
 |------|---------|
-| `src/parser/extractor.ts` | Core parsing state machine |
-| `src/storage/db.ts` | Database operations |
-| `src/studio/frontend/App.tsx` | Main UI |
-| `src/index.ts` | CLI entry point |
+| `apps/cli/src/parser/extractor.ts` | Core parsing state machine |
+| `apps/cli/src/storage/db.ts` | Database operations |
+| `apps/cli/src/studio/frontend/App.tsx` | Local dashboard UI |
+| `apps/cli/src/index.ts` | CLI entry point |
+| `apps/web/` | Web platform (Next.js) |
 
 ---
 
 ## The Name
 
-**Agentlogs** — logs from your AI agents.
+**CogCommit** — cognitive commits from your AI-assisted development.
 
-- Clear and descriptive
-- Developer-friendly (.dev domain)
-- Works as noun: "Check my agentlogs"
+- A **cognitive commit** captures the reasoning, exploration, and decisions that led to the code
+- The intellectual work, not just the transcript
+- "Cog" = cognition/thinking, "Commit" = unit of work (like git commit)

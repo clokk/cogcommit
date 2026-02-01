@@ -1,0 +1,155 @@
+/**
+ * SQLite schema definitions for Agentlogs
+ */
+
+export const SCHEMA_VERSION = 6;
+
+export const CREATE_TABLES = `
+-- Cognitive commits (persisted)
+CREATE TABLE IF NOT EXISTS cognitive_commits (
+  id TEXT PRIMARY KEY,
+  git_hash TEXT,
+  started_at TEXT NOT NULL,
+  closed_at TEXT NOT NULL,
+  closed_by TEXT NOT NULL,
+  parallel INTEGER DEFAULT 0,
+  files_read TEXT,
+  files_changed TEXT
+);
+
+-- Sessions
+CREATE TABLE IF NOT EXISTS sessions (
+  id TEXT PRIMARY KEY,
+  commit_id TEXT REFERENCES cognitive_commits(id),
+  started_at TEXT NOT NULL,
+  ended_at TEXT NOT NULL
+);
+
+-- Turns (conversation)
+CREATE TABLE IF NOT EXISTS turns (
+  id TEXT PRIMARY KEY,
+  session_id TEXT REFERENCES sessions(id),
+  role TEXT NOT NULL,
+  content TEXT,
+  timestamp TEXT NOT NULL,
+  tool_calls TEXT,
+  triggers_visual INTEGER DEFAULT 0
+);
+
+-- Visuals (screenshots/previews)
+CREATE TABLE IF NOT EXISTS visuals (
+  id TEXT PRIMARY KEY,
+  commit_id TEXT REFERENCES cognitive_commits(id),
+  type TEXT NOT NULL,
+  path TEXT NOT NULL,
+  captured_at TEXT NOT NULL,
+  caption TEXT
+);
+
+-- Daemon state
+CREATE TABLE IF NOT EXISTS daemon_state (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
+
+-- Schema version
+CREATE TABLE IF NOT EXISTS schema_version (
+  version INTEGER PRIMARY KEY
+);
+
+-- Indexes for common queries
+CREATE INDEX IF NOT EXISTS idx_sessions_commit ON sessions(commit_id);
+CREATE INDEX IF NOT EXISTS idx_turns_session ON turns(session_id);
+CREATE INDEX IF NOT EXISTS idx_visuals_commit ON visuals(commit_id);
+CREATE INDEX IF NOT EXISTS idx_commits_git_hash ON cognitive_commits(git_hash);
+CREATE INDEX IF NOT EXISTS idx_commits_started ON cognitive_commits(started_at);
+`;
+
+export const MIGRATIONS: { version: number; sql: string }[] = [
+  // Version 1 is the initial schema, no migration needed
+  {
+    version: 2,
+    sql: `
+      -- Add curation fields to cognitive_commits
+      ALTER TABLE cognitive_commits ADD COLUMN published INTEGER DEFAULT 0;
+      ALTER TABLE cognitive_commits ADD COLUMN hidden INTEGER DEFAULT 0;
+      ALTER TABLE cognitive_commits ADD COLUMN display_order INTEGER DEFAULT 0;
+      ALTER TABLE cognitive_commits ADD COLUMN title TEXT;
+    `,
+  },
+  {
+    version: 3,
+    sql: `
+      -- Add project_name column for global mode filtering
+      ALTER TABLE cognitive_commits ADD COLUMN project_name TEXT;
+      CREATE INDEX IF NOT EXISTS idx_commits_project ON cognitive_commits(project_name);
+    `,
+  },
+  {
+    version: 4,
+    sql: `
+      -- Add model column to turns for displaying which model generated the response
+      ALTER TABLE turns ADD COLUMN model TEXT;
+    `,
+  },
+  {
+    version: 5,
+    sql: `
+      -- Add source column to track which agent/tool the conversation was imported from
+      -- Valid values: claude_code, cursor, antigravity, codex, opencode
+      ALTER TABLE cognitive_commits ADD COLUMN source TEXT DEFAULT 'claude_code';
+    `,
+  },
+  {
+    version: 6,
+    sql: `
+      -- Cloud sync metadata for cognitive_commits
+      ALTER TABLE cognitive_commits ADD COLUMN cloud_id TEXT;
+      ALTER TABLE cognitive_commits ADD COLUMN sync_status TEXT DEFAULT 'pending';
+      ALTER TABLE cognitive_commits ADD COLUMN cloud_version INTEGER DEFAULT 0;
+      ALTER TABLE cognitive_commits ADD COLUMN local_version INTEGER DEFAULT 1;
+      ALTER TABLE cognitive_commits ADD COLUMN last_synced_at TEXT;
+
+      -- Cloud sync metadata for sessions
+      ALTER TABLE sessions ADD COLUMN cloud_id TEXT;
+      ALTER TABLE sessions ADD COLUMN sync_status TEXT DEFAULT 'pending';
+      ALTER TABLE sessions ADD COLUMN cloud_version INTEGER DEFAULT 0;
+      ALTER TABLE sessions ADD COLUMN local_version INTEGER DEFAULT 1;
+
+      -- Cloud sync metadata for turns
+      ALTER TABLE turns ADD COLUMN cloud_id TEXT;
+      ALTER TABLE turns ADD COLUMN sync_status TEXT DEFAULT 'pending';
+      ALTER TABLE turns ADD COLUMN cloud_version INTEGER DEFAULT 0;
+      ALTER TABLE turns ADD COLUMN local_version INTEGER DEFAULT 1;
+
+      -- Cloud sync metadata for visuals
+      ALTER TABLE visuals ADD COLUMN cloud_id TEXT;
+      ALTER TABLE visuals ADD COLUMN sync_status TEXT DEFAULT 'pending';
+      ALTER TABLE visuals ADD COLUMN cloud_version INTEGER DEFAULT 0;
+      ALTER TABLE visuals ADD COLUMN local_version INTEGER DEFAULT 1;
+      ALTER TABLE visuals ADD COLUMN cloud_url TEXT;
+
+      -- Indexes for efficient sync queries
+      CREATE INDEX IF NOT EXISTS idx_commits_sync_status ON cognitive_commits(sync_status);
+      CREATE INDEX IF NOT EXISTS idx_commits_cloud_id ON cognitive_commits(cloud_id);
+      CREATE INDEX IF NOT EXISTS idx_sessions_sync_status ON sessions(sync_status);
+      CREATE INDEX IF NOT EXISTS idx_turns_sync_status ON turns(sync_status);
+      CREATE INDEX IF NOT EXISTS idx_visuals_sync_status ON visuals(sync_status);
+    `,
+  },
+];
+
+/**
+ * Get migration SQL for upgrading from one version to another
+ */
+export function getMigrationSql(fromVersion: number, toVersion: number): string[] {
+  const migrations: string[] = [];
+
+  for (const migration of MIGRATIONS) {
+    if (migration.version > fromVersion && migration.version <= toVersion) {
+      migrations.push(migration.sql);
+    }
+  }
+
+  return migrations;
+}
