@@ -49,7 +49,7 @@ export default function MarketingLayout({
             </p>
             <div className="flex items-center gap-4 text-zinc-500 text-sm">
               <a
-                href="https://github.com/connorleisz/cogcommit"
+                href="https://github.com/clokk/cogcommit"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-white transition-colors"

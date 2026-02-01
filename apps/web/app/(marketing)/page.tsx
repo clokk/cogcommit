@@ -22,7 +22,7 @@ export default function LandingPage() {
               Get Started Free
             </Link>
             <a
-              href="https://github.com/connorleisz/cogcommit"
+              href="https://github.com/clokk/cogcommit"
               target="_blank"
               rel="noopener noreferrer"
               className="px-6 py-3 bg-zinc-800 text-white rounded-lg font-medium hover:bg-zinc-700 transition-colors"
