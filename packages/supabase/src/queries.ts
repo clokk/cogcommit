@@ -54,9 +54,9 @@ export async function getCommits(
     .select(
       `
       *,
-      sessions (
+      sessions:cognitive_sessions (
         *,
-        turns (*)
+        turns:cognitive_turns (*)
       )
     `
     )
@@ -102,9 +102,9 @@ export async function getCommit(
     .select(
       `
       *,
-      sessions (
+      sessions:cognitive_sessions (
         *,
-        turns (*)
+        turns:cognitive_turns (*)
       )
     `
     )
@@ -234,9 +234,9 @@ export async function updateCommit(
     .select(
       `
       *,
-      sessions (
+      sessions:cognitive_sessions (
         *,
-        turns (*)
+        turns:cognitive_turns (*)
       )
     `
     )

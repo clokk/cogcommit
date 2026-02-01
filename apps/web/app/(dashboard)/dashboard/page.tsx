@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import DashboardView from "@/components/DashboardView";
-import { transformCommitWithRelations, type DbCommitWithRelations } from "@cogcommit/supabase";
+import { getCommits } from "@cogcommit/supabase";
 
 interface ProjectListItem {
   name: string;
@@ -20,30 +20,16 @@ export default async function DashboardPage() {
     user?.email?.split("@")[0] ||
     "User";
 
-  // Fetch all commits with full session/turn data
-  // Using explicit relationship aliases that match the database schema
-  const { data: rawCommits, error } = await supabase
-    .from("cognitive_commits")
-    .select(
-      `
-      *,
-      sessions:cognitive_sessions (
-        *,
-        turns:cognitive_turns (*)
-      )
-    `
-    )
-    .eq("user_id", user?.id)
-    .is("deleted_at", null)
-    .eq("hidden", false)
-    .order("closed_at", { ascending: false });
+  // Use shared getCommits from @cogcommit/supabase
+  const allCommits = await getCommits(supabase, {
+    userId: user?.id,
+    excludeHidden: true,
+    limit: 1000,
+    orderBy: "closed_at",
+    orderDirection: "desc",
+  });
 
-  if (error) {
-    console.error("Failed to fetch commits:", error);
-  }
-
-  // Transform using shared function and filter out 0-turn commits
-  const allCommits = ((rawCommits as DbCommitWithRelations[]) || []).map(transformCommitWithRelations);
+  // Filter out 0-turn commits
   const commits = allCommits.filter((c) => (c.turnCount ?? 0) > 0);
 
   // Build projects list from filtered commits
