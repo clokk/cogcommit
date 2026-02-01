@@ -97,6 +97,17 @@ Returns `CommitListItem[]` with:
 - Computed `sessionCount` and `turnCount` for display
 - No full session/turn content
 
+### Auto-Generated Titles
+
+Since `CommitListItem` doesn't include full turn content, we can't fall back to extracting the first user message at display time. Instead, titles are **auto-generated during CLI sync** (in `apps/cli/src/sync/push.ts`).
+
+When a commit is pushed to the cloud:
+1. If the commit has no title, `generateCommitTitle()` extracts the first user message
+2. The message is truncated to 100 characters at a word boundary
+3. The generated title is stored in the database
+
+This is a one-time cost per commit (at sync time), not per page load. The utility lives in `apps/cli/src/utils/title.ts`.
+
 **`/api/commits/[id]/detail`** - Full detail for viewer:
 
 ```typescript

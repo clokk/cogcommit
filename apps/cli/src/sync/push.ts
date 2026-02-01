@@ -8,6 +8,7 @@ import type { CognitiveCommit } from "../models/types";
 import type { SyncResult } from "./types";
 import { v5 as uuidv5 } from "uuid";
 import { COGCOMMIT_UUID_NAMESPACE, SYNC_BATCH_SIZE } from "../constants";
+import { generateCommitTitle } from "../utils/title";
 
 /**
  * Convert a string to a valid UUID
@@ -121,6 +122,9 @@ async function pushCommit(
   userId: string,
   machineUuid: string | null
 ): Promise<{ id: string; version: number }> {
+  // Auto-generate title from first user message if not set
+  const title = generateCommitTitle(commit);
+
   const { data, error } = await supabase
     .from("cognitive_commits")
     .upsert(
@@ -140,7 +144,7 @@ async function pushCommit(
         published: commit.published || false,
         hidden: commit.hidden || false,
         display_order: commit.displayOrder || 0,
-        title: commit.title,
+        title,
         version: (commit.cloudVersion || 0) + 1,
         updated_at: new Date().toISOString(),
       },

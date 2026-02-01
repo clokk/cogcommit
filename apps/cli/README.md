@@ -68,7 +68,8 @@ src/
 │   └── frontend/         # React app (bundled by Vite)
 ├── daemon/               # Background watcher
 ├── config/               # Configuration paths
-└── models/               # Type definitions
+├── models/               # Type definitions
+└── utils/                # Utility functions (title generation, etc.)
 ```
 
 ## Database API
