@@ -119,11 +119,13 @@ Anyone who uses Claude Code and wants to:
 - `cogcommit login` — GitHub OAuth authentication
 - `cogcommit push` / `cogcommit pull` — Manual sync
 - Cross-machine access — Your cognitive commits anywhere
+- Free tier: 250 commits, 50 MB (local unlimited)
 
 ### Web Platform
 - Browse synced commits at cogcommit.com
 - Filter by project, source, or date
 - Same GitHub account as CLI
+- Usage bar shows commit count and storage
 
 ## Future Possibilities
 

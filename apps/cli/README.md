@@ -102,6 +102,20 @@ db.daemonState.setFilePosition(filePath, position);
 
 ## Cloud Sync Commands
 
+### Free Tier Limits
+
+Cloud sync has usage limits:
+- **250 commits** synced to cloud
+- **50 MB storage**
+
+Local usage is unlimited. When pushing, only the most recent commits sync up to the limit.
+
+**What's automatically filtered:**
+- Warmup sessions (Claude Code internal)
+- Commits with no turns (empty)
+
+These don't count against your limit and aren't synced to cloud.
+
 ### Push Options
 
 ```bash

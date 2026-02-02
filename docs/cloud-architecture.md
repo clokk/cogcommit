@@ -178,6 +178,9 @@ cogcommit whoami             # Show current user
 ### Sync
 ```bash
 cogcommit push               # Push pending commits to cloud
+cogcommit push --dry-run     # Preview what would be pushed
+cogcommit push --force       # Re-push all commits
+cogcommit push --retry       # Retry failed commits
 cogcommit pull               # Pull new commits from cloud
 cogcommit sync               # Bidirectional sync
 cogcommit sync --status      # Show sync state
@@ -285,6 +288,27 @@ src/sync/
 - [ ] Offline support and queue persistence
 - [ ] Conflict resolution UI in Studio
 - [ ] Documentation and onboarding
+
+## Usage Limits
+
+### Free Tier
+- **250 commits** synced to cloud
+- **50 MB storage**
+- Unlimited local usage
+
+### What Counts
+Only "valid" commits count against limits:
+- Has at least 1 turn
+- First message is not a warmup (Claude Code internal)
+
+### Enforcement
+- Push automatically filters warmup/empty commits (marks as synced locally)
+- When at limit, only most recent commits sync
+- Usage bar shown in both CLI studio and web dashboard
+
+### Upgrade Path (Future)
+- Pro tier: Unlimited commits, 1GB storage
+- Team tier: Shared repositories, collaboration
 
 ## Cost Estimate
 

@@ -125,6 +125,9 @@ export default function DocsPage() {
               description="Push local commits to the cloud"
               options={[
                 { flag: "-v, --verbose", desc: "Show verbose output" },
+                { flag: "--dry-run", desc: "Preview what would be pushed" },
+                { flag: "--force", desc: "Re-push all commits (resets sync status)" },
+                { flag: "--retry", desc: "Retry previously failed commits" },
               ]}
             />
 
@@ -135,6 +138,68 @@ export default function DocsPage() {
                 { flag: "-v, --verbose", desc: "Show verbose output" },
               ]}
             />
+
+            <CommandDoc
+              command="cogcommit stats"
+              description="View commit statistics"
+              options={[
+                { flag: "--project <name>", desc: "Filter by project" },
+                { flag: "--json", desc: "Output as JSON" },
+              ]}
+            />
+
+            <CommandDoc
+              command="cogcommit search <query>"
+              description="Search through your conversations"
+              options={[
+                { flag: "--project <name>", desc: "Filter by project" },
+                { flag: "--limit <n>", desc: "Limit results (default: 20)" },
+              ]}
+            />
+
+            <CommandDoc
+              command="cogcommit export"
+              description="Export commits to JSON or Markdown"
+              options={[
+                { flag: "-o, --output <file>", desc: "Output file path" },
+                { flag: "--format <type>", desc: "json or markdown" },
+                { flag: "--project <name>", desc: "Filter by project" },
+              ]}
+            />
+          </div>
+        </section>
+
+        {/* Free Tier */}
+        <section className="mb-16">
+          <h2 className="text-2xl font-semibold text-primary mb-6">
+            Free Tier Limits
+          </h2>
+
+          <div className="bg-panel/50 rounded-lg p-6 border border-border">
+            <p className="text-primary mb-4">
+              Cloud sync has usage limits on the free tier:
+            </p>
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-bg rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-chronicle-blue">250</div>
+                <div className="text-muted">commits</div>
+              </div>
+              <div className="bg-bg rounded-lg p-4 text-center">
+                <div className="text-3xl font-bold text-chronicle-blue">50 MB</div>
+                <div className="text-muted">storage</div>
+              </div>
+            </div>
+
+            <p className="text-muted mb-4">
+              <strong className="text-primary">Local usage is unlimited.</strong>{" "}
+              When pushing, only the most recent commits sync up to the limit.
+            </p>
+
+            <p className="text-muted">
+              <strong className="text-primary">Automatically filtered:</strong>{" "}
+              Warmup sessions and empty commits don&apos;t count against your limit.
+            </p>
           </div>
         </section>
 

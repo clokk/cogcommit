@@ -54,6 +54,25 @@ cogcommit push
 cogcommit pull
 ```
 
+### Free Tier Limits
+
+Cloud sync has free tier limits:
+- **250 commits** synced to cloud
+- **50 MB storage**
+
+Local usage is unlimited. When pushing, only the most recent commits sync up to the limit. Warmup sessions and empty commits are automatically filtered out.
+
+```bash
+# See what would be pushed
+cogcommit push --dry-run
+
+# Force re-sync all commits
+cogcommit push --force
+
+# Retry failed pushes
+cogcommit push --retry
+```
+
 ## Commands
 
 ### Import Sessions
