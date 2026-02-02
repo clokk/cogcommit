@@ -20,6 +20,21 @@ export interface PushOptions {
 }
 
 /**
+ * Check if a commit is valid for syncing (not warmup, has turns)
+ */
+function isValidCommit(commit: CognitiveCommit): boolean {
+  // Filter out 0-turn commits
+  const totalTurns = commit.sessions.reduce((sum, s) => sum + s.turns.length, 0);
+  if (totalTurns === 0) return false;
+
+  // Filter out warmup commits (Claude Code internal)
+  const firstUserMessage = commit.sessions[0]?.turns[0]?.content || "";
+  if (firstUserMessage.toLowerCase().includes("warmup")) return false;
+
+  return true;
+}
+
+/**
  * Convert a string to a valid UUID
  * If already a valid UUID, returns as-is; otherwise generates a deterministic UUID
  */
@@ -79,6 +94,18 @@ export async function pushToCloud(
       console.log(`Found ${pendingCommits.length} pending commits to push`);
     }
   }
+
+  // Filter out warmup and 0-turn commits (mark them as synced so they don't reappear)
+  const invalidCommits = pendingCommits.filter((c) => !isValidCommit(c));
+  if (invalidCommits.length > 0) {
+    for (const commit of invalidCommits) {
+      db.commits.updateSyncStatus(commit.id, "synced");
+    }
+    if (options.verbose) {
+      console.log(`Skipped ${invalidCommits.length} warmup/empty commits`);
+    }
+  }
+  pendingCommits = pendingCommits.filter(isValidCommit);
 
   // Handle --dry-run: just show stats
   if (options.dryRun) {

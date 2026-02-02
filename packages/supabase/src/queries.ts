@@ -300,6 +300,24 @@ export async function getUserProfile(
 }
 
 /**
+ * Check if a commit is valid (not warmup, has turns)
+ */
+function isValidCommit(commit: {
+  sessions?: Array<{ turns?: Array<{ role?: string; content?: string | null }> }>;
+}): boolean {
+  const sessions = commit.sessions || [];
+  const totalTurns = sessions.reduce((sum, s) => sum + (s.turns?.length || 0), 0);
+  if (totalTurns === 0) return false;
+
+  // Check first user turn for warmup
+  const firstTurn = sessions[0]?.turns?.[0];
+  const firstContent = firstTurn?.content || "";
+  if (firstContent.toLowerCase().includes("warmup")) return false;
+
+  return true;
+}
+
+/**
  * Get user's usage data (commit count, storage usage, limits)
  */
 export async function getUserUsage(
@@ -317,20 +335,34 @@ export async function getUserUsage(
   const commitLimit = quota?.commit_limit ?? FREE_TIER_LIMITS.commits;
   const storageLimitBytes = quota?.storage_limit_bytes ?? FREE_TIER_LIMITS.storageBytes;
 
-  // Count commits
-  const { count: commitCount } = await client
+  // Fetch commits with first turn to filter warmup/empty
+  // Only fetch minimal fields needed for validation
+  const { data: commits } = await client
     .from("cognitive_commits")
-    .select("id", { count: "exact", head: true })
+    .select(`
+      id,
+      sessions (
+        turns (
+          role,
+          content
+        )
+      )
+    `)
     .eq("user_id", userId)
     .is("deleted_at", null);
 
-  // Get storage usage via database function
+  // Count only valid commits (non-warmup, has turns)
+  const validCommits = (commits || []).filter(isValidCommit);
+  const commitCount = validCommits.length;
+
+  // Get storage usage via database function (counts all storage, not just valid)
+  // This is intentional - storage is consumed regardless of warmup status
   const { data: storageBytes } = await client.rpc("calculate_user_storage", {
     p_user_id: userId,
   });
 
   return {
-    commitCount: commitCount ?? 0,
+    commitCount,
     commitLimit,
     storageUsedBytes: storageBytes ?? 0,
     storageLimitBytes,
