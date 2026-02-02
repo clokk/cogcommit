@@ -92,6 +92,26 @@ cogcommit push               # Push pending commits to cloud
 cogcommit pull               # Pull new commits from cloud
 ```
 
+### Data Management
+
+```bash
+# View statistics
+cogcommit stats
+cogcommit stats --project myproject --json
+
+# Export commits
+cogcommit export --format=json -o backup.json
+cogcommit export --format=markdown --project myproject
+
+# Search conversations
+cogcommit search "error handling"
+cogcommit search "API" --project myproject --limit 50
+
+# Prune old commits
+cogcommit prune --before 30d --dry-run
+cogcommit prune --before 2024-01-01 --yes
+```
+
 ## Monorepo Structure
 
 ```

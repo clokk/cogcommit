@@ -2,7 +2,8 @@
  * Pull cloud changes to local
  */
 
-import { getAuthenticatedClient, loadAuthTokens, getMachineId } from "./client";
+import { getAuthenticatedClient, loadAuthTokens, getMachineId, refreshTokenIfNeeded } from "./client";
+import cliProgress from "cli-progress";
 import { CogCommitDB } from "../storage/db";
 import type { CognitiveCommit, Session, Turn } from "../models/types";
 import type { SyncResult } from "./types";
@@ -20,6 +21,13 @@ export async function pullFromCloud(
     conflicts: 0,
     errors: [],
   };
+
+  // Refresh token if needed before starting
+  const refreshed = await refreshTokenIfNeeded();
+  if (!refreshed) {
+    result.errors.push("Not authenticated or token refresh failed");
+    return result;
+  }
 
   const tokens = loadAuthTokens();
   if (!tokens) {
@@ -64,6 +72,22 @@ export async function pullFromCloud(
       console.log(`Found ${cloudCommits?.length || 0} commits to pull`);
     }
 
+    // Create progress bar (unless verbose mode)
+    const progressBar =
+      !options.verbose && cloudCommits && cloudCommits.length > 0
+        ? new cliProgress.SingleBar(
+            {
+              format: "Pulling [{bar}] {percentage}% | {value}/{total} commits",
+              barCompleteChar: "\u2588",
+              barIncompleteChar: "\u2591",
+              hideCursor: true,
+            },
+            cliProgress.Presets.shades_classic
+          )
+        : null;
+
+    progressBar?.start(cloudCommits?.length || 0, 0);
+
     for (const cloudCommit of cloudCommits || []) {
       try {
         // Check if we have this commit locally
@@ -83,9 +107,11 @@ export async function pullFromCloud(
               // Both have changes - conflict
               db.commits.updateSyncStatus(localCommit.id, "conflict");
               result.conflicts++;
+              progressBar?.increment();
               continue;
             }
             // Only local has changes, skip pull
+            progressBar?.increment();
             continue;
           }
 
@@ -107,12 +133,16 @@ export async function pullFromCloud(
             console.log(`Created commit ${cloudCommit.id.substring(0, 8)}`);
           }
         }
+        progressBar?.increment();
       } catch (error) {
         result.errors.push(
           `Failed to process commit ${cloudCommit.id}: ${(error as Error).message}`
         );
+        progressBar?.increment();
       }
     }
+
+    progressBar?.stop();
 
     // Update last sync time
     if (cloudCommits && cloudCommits.length > 0) {

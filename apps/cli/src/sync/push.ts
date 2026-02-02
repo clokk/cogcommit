@@ -2,7 +2,7 @@
  * Push local changes to cloud
  */
 
-import { getAuthenticatedClient, getMachineId, loadAuthTokens } from "./client";
+import { getAuthenticatedClient, getMachineId, loadAuthTokens, refreshTokenIfNeeded } from "./client";
 import { CogCommitDB } from "../storage/db";
 import type { CognitiveCommit } from "../models/types";
 import type { SyncResult } from "./types";
@@ -45,6 +45,13 @@ export async function pushToCloud(
     conflicts: 0,
     errors: [],
   };
+
+  // Refresh token if needed before starting
+  const refreshed = await refreshTokenIfNeeded();
+  if (!refreshed) {
+    result.errors.push("Not authenticated or token refresh failed");
+    return result;
+  }
 
   const tokens = loadAuthTokens();
   if (!tokens) {

@@ -131,6 +131,42 @@ cogcommit cloud clear
 cogcommit cloud clear --yes
 ```
 
+## Data Management Commands
+
+### Statistics
+
+```bash
+cogcommit stats                    # Overall statistics
+cogcommit stats --project myproj   # Project-specific stats
+cogcommit stats --json             # JSON output
+```
+
+### Export
+
+```bash
+cogcommit export                           # JSON to stdout
+cogcommit export -o backup.json            # Save to file
+cogcommit export --format=markdown         # Markdown format
+cogcommit export --project myproj --limit 10
+```
+
+### Search
+
+```bash
+cogcommit search "keyword"                 # Search all content
+cogcommit search "error" --project myproj  # Filter by project
+cogcommit search "API" --limit 50          # Limit results
+```
+
+### Prune
+
+```bash
+cogcommit prune --before 30d --dry-run     # Preview deletions
+cogcommit prune --before 2024-01-01        # Delete before date
+cogcommit prune --before 7d --project old  # Project-specific
+cogcommit prune --before 90d --yes         # Skip confirmation
+```
+
 ## Publishing
 
 ```bash

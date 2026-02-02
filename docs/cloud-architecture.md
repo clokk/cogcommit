@@ -183,6 +183,14 @@ cogcommit sync               # Bidirectional sync
 cogcommit sync --status      # Show sync state
 ```
 
+### Data Management
+```bash
+cogcommit stats              # Show commit/session/turn statistics
+cogcommit export             # Export commits to JSON or Markdown
+cogcommit search <query>     # Full-text search through conversations
+cogcommit prune --before <date>  # Delete old commits locally
+```
+
 ### Config
 ```bash
 cogcommit config set storage cloud

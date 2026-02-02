@@ -12,3 +12,7 @@ export { registerAuthCommands } from "./auth";
 export { registerSyncCommands } from "./sync";
 export { registerConfigCommands } from "./config";
 export { registerCloudCommands } from "./cloud";
+export { registerStatsCommand } from "./stats";
+export { registerExportCommand } from "./export";
+export { registerSearchCommand } from "./search";
+export { registerPruneCommand } from "./prune";

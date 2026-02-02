@@ -65,6 +65,29 @@ export interface VisualRow {
   cloud_url: string | null;
 }
 
+// Statistics interface for commits
+export interface CommitStats {
+  totalCommits: number;
+  totalSessions: number;
+  totalTurns: number;
+  projectCount: number;
+  bySource: Record<string, number>;
+  topProjects: { name: string; count: number }[];
+  firstCommit: string | null;
+  lastCommit: string | null;
+}
+
+// Search result interface for turns
+export interface SearchResult {
+  id: string;
+  role: string;
+  content: string;
+  timestamp: string;
+  session_id: string;
+  commit_id: string;
+  project_name: string | null;
+}
+
 // Base repository interface
 export interface Repository {
   readonly db: Database.Database;

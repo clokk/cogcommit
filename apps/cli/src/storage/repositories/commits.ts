@@ -4,7 +4,7 @@
 
 import type Database from "better-sqlite3";
 import type { CognitiveCommit } from "../../models/types";
-import type { CommitRow, RepositoryContext } from "./types";
+import type { CommitRow, CommitStats, RepositoryContext } from "./types";
 import { SessionsRepository } from "./sessions";
 import { VisualsRepository } from "./visuals";
 
@@ -337,6 +337,79 @@ export class CommitsRepository {
       .run();
 
     return result.changes;
+  }
+
+  /**
+   * Get commits before a specific date
+   */
+  getBeforeDate(beforeDate: string, projectName?: string): CognitiveCommit[] {
+    let sql = "SELECT * FROM cognitive_commits WHERE closed_at < ?";
+    const params: string[] = [beforeDate];
+
+    if (projectName) {
+      sql += " AND project_name = ?";
+      params.push(projectName);
+    }
+
+    sql += " ORDER BY closed_at ASC";
+
+    const rows = this.db.prepare(sql).all(...params) as CommitRow[];
+    return rows.map((row) => this.rowToCommit(row));
+  }
+
+  /**
+   * Get statistics about cognitive commits
+   */
+  getStats(projectName?: string): CommitStats {
+    const whereClause = projectName ? "WHERE project_name = ?" : "";
+    const params = projectName ? [projectName] : [];
+
+    const commits = this.db
+      .prepare(`SELECT COUNT(*) as count FROM cognitive_commits ${whereClause}`)
+      .get(...params) as { count: number };
+
+    const sessions = this.db
+      .prepare(
+        `SELECT COUNT(*) as count FROM sessions s
+         JOIN cognitive_commits c ON s.commit_id = c.id
+         ${whereClause}`
+      )
+      .get(...params) as { count: number };
+
+    const turns = this.db
+      .prepare(
+        `SELECT COUNT(*) as count FROM turns t
+         JOIN sessions s ON t.session_id = s.id
+         JOIN cognitive_commits c ON s.commit_id = c.id
+         ${whereClause}`
+      )
+      .get(...params) as { count: number };
+
+    const bySource = this.db
+      .prepare(
+        `SELECT source, COUNT(*) as count FROM cognitive_commits
+         ${whereClause}
+         GROUP BY source`
+      )
+      .all(...params) as { source: string; count: number }[];
+
+    const timeRange = this.db
+      .prepare(
+        `SELECT MIN(started_at) as first, MAX(closed_at) as last
+         FROM cognitive_commits ${whereClause}`
+      )
+      .get(...params) as { first: string | null; last: string | null };
+
+    return {
+      totalCommits: commits.count,
+      totalSessions: sessions.count,
+      totalTurns: turns.count,
+      projectCount: this.getDistinctProjects().length,
+      bySource: Object.fromEntries(bySource.map((s) => [s.source, s.count])),
+      topProjects: this.getDistinctProjects(),
+      firstCommit: timeRange.first,
+      lastCommit: timeRange.last,
+    };
   }
 
   private rowToCommit(row: CommitRow): CognitiveCommit {

@@ -4,7 +4,7 @@
 
 import type Database from "better-sqlite3";
 import type { Turn } from "../../models/types";
-import type { TurnRow, RepositoryContext } from "./types";
+import type { TurnRow, RepositoryContext, SearchResult } from "./types";
 
 export class TurnsRepository {
   private db: Database.Database;
@@ -77,6 +77,39 @@ export class TurnsRepository {
       turn.triggersVisual ? 1 : 0,
       turn.model || null
     );
+  }
+
+  /**
+   * Search turns by content
+   */
+  search(
+    query: string,
+    options: { project?: string; limit?: number } = {}
+  ): SearchResult[] {
+    const limit = options.limit || 20;
+
+    let sql = `
+      SELECT
+        t.id, t.role, t.content, t.timestamp,
+        s.id as session_id,
+        c.id as commit_id, c.project_name
+      FROM turns t
+      JOIN sessions s ON t.session_id = s.id
+      JOIN cognitive_commits c ON s.commit_id = c.id
+      WHERE t.content LIKE ?
+    `;
+
+    const params: (string | number)[] = [`%${query}%`];
+
+    if (options.project) {
+      sql += " AND c.project_name = ?";
+      params.push(options.project);
+    }
+
+    sql += " ORDER BY t.timestamp DESC LIMIT ?";
+    params.push(limit);
+
+    return this.db.prepare(sql).all(...params) as SearchResult[];
   }
 
   private rowToTurn(row: TurnRow): Turn {

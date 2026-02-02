@@ -149,6 +149,11 @@ export function isCloudAvailable(): boolean {
 }
 
 /**
+ * Re-export refreshTokenIfNeeded for use in sync operations
+ */
+export { refreshTokenIfNeeded } from "./auth";
+
+/**
  * Get a unique machine ID for this device
  */
 export function getMachineId(): string {

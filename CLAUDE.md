@@ -87,6 +87,10 @@ A cognitive commit closes when:
 | `apps/cli/src/sync/push.ts` | Push local commits to cloud |
 | `apps/cli/src/commands/cloud.ts` | Cloud management commands (clear) |
 | `apps/cli/src/sync/pull.ts` | Pull commits from cloud |
+| `apps/cli/src/commands/stats.ts` | Statistics command |
+| `apps/cli/src/commands/export.ts` | Export to JSON/Markdown |
+| `apps/cli/src/commands/search.ts` | Full-text search |
+| `apps/cli/src/commands/prune.ts` | Delete old commits |
 | `apps/cli/src/studio/server.ts` | Local dashboard Hono server |
 | `apps/web/app/(dashboard)/` | Web platform dashboard pages |
 | `apps/web/components/DashboardClient.tsx` | Main dashboard component |
