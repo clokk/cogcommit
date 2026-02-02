@@ -145,6 +145,43 @@ cogcommit cloud clear
 cogcommit cloud clear --yes
 ```
 
+## Import Command
+
+The import command reads Claude Code session logs and converts them to cognitive commits.
+
+### Smart Project Detection
+
+Commits are automatically assigned to projects based on where file operations actually occurred, not just where the Claude session was started. This handles the common case of starting a session in one directory but working on files in another project.
+
+**How it works:**
+- File reads: 1 point each
+- File edits/writes: 3 points each
+- Highest-scoring project wins
+- Falls back to Claude session directory if no file operations
+
+**Example:** A session started in `claudeverse` but with most edits in `cogcommit` will be correctly tagged as a `cogcommit` commit.
+
+### Import Options
+
+```bash
+cogcommit import                   # Import all Claude Code projects (default)
+cogcommit import --project         # Import current project only (requires init)
+cogcommit import --clear           # Clear existing commits before importing
+cogcommit import --redetect        # Re-run project detection on existing commits
+```
+
+### Re-detecting Projects
+
+If you have existing commits with incorrect project assignments, use `--redetect` to re-run the smart detection algorithm:
+
+```bash
+cogcommit import --redetect
+```
+
+This scans all existing commits and updates their project assignments based on the file operations recorded in each commit.
+
+---
+
 ## Data Management Commands
 
 ### Statistics

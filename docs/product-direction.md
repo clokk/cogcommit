@@ -11,6 +11,7 @@ Last updated: 2026-02-02
 | Feature | Status |
 |---------|--------|
 | Import Claude Code sessions | ✓ |
+| Smart project detection | ✓ |
 | Local dashboard | ✓ |
 | Cloud sync (push/pull) | ✓ |
 | Web dashboard | ✓ |
