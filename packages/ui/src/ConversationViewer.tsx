@@ -12,6 +12,7 @@ import {
 } from "./utils/export";
 import {
   getSourceStyle,
+  getClosureStyle,
   getProjectColor,
   getGapMinutes,
   formatGap,
@@ -389,7 +390,8 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
     const turnCount = commit.turnCount ?? 0;
     const projectColor = commit.projectName ? getProjectColor(commit.projectName) : null;
     const sourceStyle = getSourceStyle(commit.source);
-    const currentItem = renderItems[currentItemIndex];
+    const closureStyle = getClosureStyle(commit.closedBy);
+    const currentPromptItemIndex = userPromptIndices[currentPromptPosition] ?? -1;
 
     return (
       <div ref={ref} className="h-full flex flex-col" style={{ minHeight: 0 }}>
@@ -409,14 +411,14 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
               </span>
             )}
 
-            {/* Git hash */}
+            {/* Git hash or closure badge */}
             {commit.gitHash ? (
               <span className="font-mono text-chronicle-green text-xs">
-                [{commit.gitHash}]
+                [{commit.gitHash.substring(0, 7)}]
               </span>
             ) : (
-              <span className="font-mono text-chronicle-amber text-xs">
-                [uncommitted]
+              <span className={`px-2 py-0.5 text-xs font-medium rounded ${closureStyle.bg} ${closureStyle.text}`}>
+                {closureStyle.label}
               </span>
             )}
 
@@ -635,6 +637,7 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
                     searchTerm={searchTerm}
                     isMatch={isMatch}
                     fontSize={fontSize}
+                    isCurrentPrompt={turn.role === "user" && idx === currentPromptItemIndex}
                   />
                 </React.Fragment>
               );
@@ -665,15 +668,6 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
               ▶
             </button>
           </div>
-          {currentItem && (
-            <span className="text-xs text-muted">
-              {currentItem.type === "tool-group"
-                ? `${currentItem.turns.length} tools`
-                : currentItem.turn.role === "user"
-                ? "User"
-                : "Agent"}
-            </span>
-          )}
 
           <div className="flex-1" />
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, forwardRef } from "react";
+import { motion } from "framer-motion";
 import type { Turn, ToolCall } from "@cogcommit/types";
 import {
   formatModelName,
@@ -16,6 +17,7 @@ interface TurnViewProps {
   searchTerm?: string;
   isMatch?: boolean;
   fontSize?: number;
+  isCurrentPrompt?: boolean;
 }
 
 const COLLAPSE_THRESHOLD = 500;
@@ -57,7 +59,7 @@ function highlightMatches(text: string, term: string): React.ReactNode {
 }
 
 const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
-  function TurnView({ turn, searchTerm, isMatch, fontSize = 16 }, ref) {
+  function TurnView({ turn, searchTerm, isMatch, fontSize = 16, isCurrentPrompt }, ref) {
     const [expanded, setExpanded] = useState(false);
     const [expandedToolId, setExpandedToolId] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
@@ -81,13 +83,19 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
     };
 
     return (
-      <div
+      <motion.div
         ref={ref}
         className={`group rounded-lg p-4 border-l-2 transition-opacity ${
           isUser
             ? "bg-chronicle-blue/5 border-chronicle-blue"
             : "bg-bg/50 border-border"
         } ${searchTerm && !isMatch ? "opacity-40" : ""}`}
+        animate={{
+          boxShadow: isCurrentPrompt
+            ? "inset 4px 0 12px -4px rgba(61, 132, 168, 0.6)"
+            : "none",
+        }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
       >
         {/* Role indicator with model name */}
         <div className="flex items-center gap-2 mb-2">
@@ -248,7 +256,7 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
             )}
           </div>
         )}
-      </div>
+      </motion.div>
     );
   }
 );

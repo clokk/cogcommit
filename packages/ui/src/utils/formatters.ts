@@ -247,3 +247,21 @@ export function generateTitlePreview(firstUserContent: string | undefined): stri
   if (content.length <= 50) return content;
   return content.slice(0, 50).replace(/\s+\S*$/, "") + "…";
 }
+
+/**
+ * Get styling for closure type badge
+ */
+export function getClosureStyle(closedBy: "git_commit" | "session_end" | "explicit"): {
+  bg: string;
+  text: string;
+  label: string;
+} {
+  switch (closedBy) {
+    case "git_commit":
+      return { bg: "bg-chronicle-green/20", text: "text-chronicle-green", label: "committed" };
+    case "session_end":
+      return { bg: "bg-chronicle-amber/20", text: "text-chronicle-amber", label: "session ended" };
+    case "explicit":
+      return { bg: "bg-chronicle-purple/20", text: "text-chronicle-purple", label: "closed" };
+  }
+}
