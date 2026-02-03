@@ -48,6 +48,10 @@ cogcommit/
   filesRead: string[];     // Paths only
   filesChanged: string[];  // Paths with diffs
   source: ConversationSource; // Agent that produced the conversation
+  // Public sharing
+  publicSlug?: string;     // URL slug for public access (e.g., "abc12345")
+  publishedAt?: string;    // When the commit was published
+  published?: boolean;     // Whether the commit is publicly accessible
 }
 
 // Supported sources (currently only claude_code is implemented)
@@ -60,6 +64,15 @@ A cognitive commit closes when:
 1. **Git commit** — Natural boundary, links directly to hash
 2. **Session end** — Work done but uncommitted (exploratory, abandoned)
 3. **Explicit close** — User manually marks boundary
+
+### Public Sharing
+
+Commits can be published to make them publicly accessible via shareable links:
+
+- **URL format**: `/c/[slug]` (e.g., `/c/abc12345`)
+- **Privacy**: All commits are private by default; explicit publish action required
+- **Slug persistence**: Unpublishing preserves the slug, so re-publishing restores the same URL
+- **Author info**: Public pages show author username (falls back to "Anonymous" if RLS blocks)
 
 ### Storage Paths
 
@@ -101,6 +114,10 @@ A cognitive commit closes when:
 | `packages/ui/src/ConversationViewer.tsx` | Full conversation viewer component |
 | `packages/ui/src/CommitList.tsx` | Commit list sidebar component |
 | `packages/ui/src/Header.tsx` | Dashboard header component |
+| `apps/web/app/c/[slug]/page.tsx` | Public commit viewer page |
+| `apps/web/app/api/commits/[id]/publish/route.ts` | Publish commit API endpoint |
+| `apps/web/app/api/commits/[id]/unpublish/route.ts` | Unpublish commit API endpoint |
+| `apps/web/app/api/public/commits/[slug]/route.ts` | Public commit fetch API (no auth) |
 
 ---
 

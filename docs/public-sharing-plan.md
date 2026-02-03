@@ -1,4 +1,6 @@
-# Plan: Public Sharing Feature
+# Public Sharing Feature
+
+**Status: Implemented** (February 2026)
 
 ## Summary
 
@@ -294,11 +296,12 @@ Either:
 
 ## Implementation Status
 
-All phases have been implemented:
+All phases have been implemented and deployed:
 - [x] Phase 1: Database & Types
 - [x] Phase 2: API Endpoints
 - [x] Phase 3: Dashboard UI
 - [x] Phase 4: Public Viewer Page
+- [ ] Phase 5: Public Profile (deferred to future iteration)
 
 ---
 
