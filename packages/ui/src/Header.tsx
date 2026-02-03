@@ -2,6 +2,7 @@
 
 import React from "react";
 import { UsageLimitBar } from "./UsageLimitBar";
+import { UsagePopover } from "./UsagePopover";
 import { StatsPopover } from "./StatsPopover";
 import type { UsageData, WeeklySummaryStats } from "@cogcommit/types";
 
@@ -93,13 +94,15 @@ export default function Header({
 
         {/* Usage limits */}
         {usage !== undefined && (
-          <UsageLimitBar
-            usage={usage}
-            loading={usageLoading}
-            minimal={!!user}
-            compact={!user}
-            upgradeHref={user ? "/dashboard/settings" : undefined}
-          />
+          user ? (
+            <UsagePopover
+              usage={usage}
+              loading={usageLoading}
+              upgradeHref="/dashboard/settings"
+            />
+          ) : (
+            <UsageLimitBar usage={usage} loading={usageLoading} compact />
+          )
         )}
 
         {/* User section (web dashboard only) */}
