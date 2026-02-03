@@ -77,6 +77,9 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
     // Item navigation state
     const [currentItemIndex, setCurrentItemIndex] = useState(0);
 
+    // Flash highlight state - set when j/k navigates, fades out automatically
+    const [highlightedItemIndex, setHighlightedItemIndex] = useState<number | null>(null);
+
     // Search state
     const [searchTerm, setSearchTerm] = useState("");
     const [searchMatchIndices, setSearchMatchIndices] = useState<number[]>([]);
@@ -96,13 +99,19 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
     const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
     const isScrollingProgrammatically = useRef(false);
     const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Reset state when commit changes
     useEffect(() => {
       setTitleValue(commit.title || "");
       setSearchTerm("");
       setCurrentItemIndex(0);
+      setHighlightedItemIndex(null);
       setEditingTitle(false);
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+        highlightTimeoutRef.current = null;
+      }
       if (conversationRef.current) {
         conversationRef.current.scrollTop = 0;
       }
@@ -230,13 +239,8 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
       return 0;
     }, [userPromptIndices, currentItemIndex]);
 
-    // The render item index of the current prompt (for highlighting)
-    const currentPromptItemIndex = useMemo(() => {
-      return userPromptIndices[currentPromptPosition] ?? -1;
-    }, [userPromptIndices, currentPromptPosition]);
-
-    // Scroll to a specific item
-    const scrollToItem = useCallback((index: number) => {
+    // Scroll to a specific item and flash highlight
+    const scrollToItem = useCallback((index: number, flash: boolean = false) => {
       const ref = itemRefs.current.get(index);
       if (ref) {
         if (scrollTimeoutRef.current) {
@@ -250,6 +254,19 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
         }, 500);
       }
       setCurrentItemIndex(index);
+      if (flash) {
+        // Clear any existing highlight timeout
+        if (highlightTimeoutRef.current) {
+          clearTimeout(highlightTimeoutRef.current);
+        }
+        // Flash the highlight
+        setHighlightedItemIndex(index);
+        // Clear after animation completes (1.5s fade + buffer)
+        highlightTimeoutRef.current = setTimeout(() => {
+          setHighlightedItemIndex(null);
+          highlightTimeoutRef.current = null;
+        }, 2000);
+      }
     }, []);
 
     // Find search matches
@@ -278,14 +295,14 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
     const goToNextItem = useCallback(() => {
       const nextPromptPos = currentPromptPosition + 1;
       if (nextPromptPos < userPromptIndices.length) {
-        scrollToItem(userPromptIndices[nextPromptPos]);
+        scrollToItem(userPromptIndices[nextPromptPos], true);
       }
     }, [currentPromptPosition, userPromptIndices, scrollToItem]);
 
     const goToPrevItem = useCallback(() => {
       const prevPromptPos = currentPromptPosition - 1;
       if (prevPromptPos >= 0) {
-        scrollToItem(userPromptIndices[prevPromptPos]);
+        scrollToItem(userPromptIndices[prevPromptPos], true);
       }
     }, [currentPromptPosition, userPromptIndices, scrollToItem]);
 
@@ -641,7 +658,7 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
                     searchTerm={searchTerm}
                     isMatch={isMatch}
                     fontSize={fontSize}
-                    isCurrentPrompt={turn.role === "user" && idx === currentPromptItemIndex}
+                    isHighlighted={idx === highlightedItemIndex}
                   />
                 </React.Fragment>
               );

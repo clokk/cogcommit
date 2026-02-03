@@ -17,7 +17,7 @@ interface TurnViewProps {
   searchTerm?: string;
   isMatch?: boolean;
   fontSize?: number;
-  isCurrentPrompt?: boolean;
+  isHighlighted?: boolean;
 }
 
 const COLLAPSE_THRESHOLD = 500;
@@ -59,7 +59,7 @@ function highlightMatches(text: string, term: string): React.ReactNode {
 }
 
 const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
-  function TurnView({ turn, searchTerm, isMatch, fontSize = 16, isCurrentPrompt }, ref) {
+  function TurnView({ turn, searchTerm, isMatch, fontSize = 16, isHighlighted }, ref) {
     const [expanded, setExpanded] = useState(false);
     const [expandedToolId, setExpandedToolId] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
@@ -82,6 +82,10 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
       }
     };
 
+    // Flash highlight: appears instantly, fades out over 1.5s
+    const highlightShadow = "inset 4px 0 12px -4px rgba(61, 132, 168, 0.6)";
+    const noShadow = "inset 4px 0 12px -4px rgba(61, 132, 168, 0)";
+
     return (
       <motion.div
         ref={ref}
@@ -90,12 +94,11 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
             ? "bg-chronicle-blue/5 border-chronicle-blue"
             : "bg-bg/50 border-border"
         } ${searchTerm && !isMatch ? "opacity-40" : ""}`}
-        animate={{
-          boxShadow: isCurrentPrompt
-            ? "inset 4px 0 12px -4px rgba(61, 132, 168, 0.6)"
-            : "inset 4px 0 12px -4px rgba(61, 132, 168, 0)",
+        animate={{ boxShadow: isHighlighted ? highlightShadow : noShadow }}
+        transition={{
+          duration: isHighlighted ? 0.1 : 1.5,
+          ease: isHighlighted ? "easeOut" : "easeIn",
         }}
-        transition={{ duration: 0.15, ease: "easeOut" }}
       >
         {/* Role indicator with model name */}
         <div className="flex items-center gap-2 mb-2">
