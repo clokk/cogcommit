@@ -517,6 +517,9 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
       const nextPos = currentModePosition + 1;
       if (nextPos < currentModeIndices.length) {
         scrollToItem(currentModeIndices[nextPos], true);
+      } else {
+        // At the end - scroll to current item (useful for single-item categories)
+        scrollToItem(currentModeIndices[currentModePosition], true);
       }
     }, [currentModePosition, currentModeIndices, scrollToItem]);
 
@@ -525,6 +528,9 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
       const prevPos = currentModePosition - 1;
       if (prevPos >= 0) {
         scrollToItem(currentModeIndices[prevPos], true);
+      } else {
+        // At the start - scroll to current item (useful for single-item categories)
+        scrollToItem(currentModeIndices[currentModePosition], true);
       }
     }, [currentModePosition, currentModeIndices, scrollToItem]);
 
@@ -954,7 +960,7 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
           <div className="flex items-center gap-2">
             <button
               onClick={goToPrev}
-              disabled={currentModePosition === 0}
+              disabled={currentModeIndices.length === 0}
               className="text-muted hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               title="Previous (k)"
             >
@@ -965,7 +971,7 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
             </span>
             <button
               onClick={goToNext}
-              disabled={currentModePosition >= currentModeIndices.length - 1}
+              disabled={currentModeIndices.length === 0}
               className="text-muted hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               title="Next (j)"
             >
