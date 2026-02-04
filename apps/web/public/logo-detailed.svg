@@ -1,0 +1,29 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer flame -->
+  <path
+    d="M32 4C32 4 22 14 22 26C22 32 26 36 32 36C38 36 42 32 42 26C42 14 32 4 32 4Z"
+    fill="#e07b39"
+  />
+  <!-- Inner bright flame -->
+  <path
+    d="M32 12C32 12 26 18 26 27C26 31 28.5 34 32 34C35.5 34 38 31 38 27C38 18 32 12 32 12Z"
+    fill="#f4a261"
+  />
+  <!-- Bright tip -->
+  <path
+    d="M32 18C32 18 28 22 28 28C28 31 30 33 32 33C34 33 36 31 36 28C36 22 32 18 32 18Z"
+    fill="#f9c87c"
+  />
+
+  <!-- Wick connecting flame to candle -->
+  <rect x="30" y="34" width="4" height="5" rx="1" fill="#4a4540" />
+
+  <!-- T as candle body - horizontal bar with rounded ends -->
+  <rect x="16" y="38" width="32" height="7" rx="3.5" fill="#e8e4df" />
+
+  <!-- T as candle body - rectangular stem with subtle taper -->
+  <path
+    d="M26 45 L38 45 L37 60 C37 62 35 63 32 63 C29 63 27 62 27 60 L26 45 Z"
+    fill="#e8e4df"
+  />
+</svg>

@@ -1,0 +1,13 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Single flame silhouette - pointed -->
+  <path
+    d="M32 4C32 4 24 13 24 25C24 31 27 36 32 36C37 36 40 31 40 25C40 13 32 4 32 4Z"
+    fill="#e07b39"
+  />
+
+  <!-- T as single shape - horizontal bar + tapered stem -->
+  <path
+    d="M16 38 L48 38 L48 45 L38 45 L37 60 C37 62 35 63 32 63 C29 63 27 62 27 60 L26 45 L16 45 Z"
+    fill="#e07b39"
+  />
+</svg>
