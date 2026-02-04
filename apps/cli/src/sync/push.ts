@@ -7,7 +7,7 @@ import { CogCommitDB } from "../storage/db";
 import type { CognitiveCommit } from "../models/types";
 import type { SyncResult } from "./types";
 import { v5 as uuidv5 } from "uuid";
-import { COGCOMMIT_UUID_NAMESPACE, SYNC_BATCH_SIZE } from "../constants";
+import { COGCOMMIT_UUID_NAMESPACE, SYNC_BATCH_SIZE, SYNC_CONCURRENCY } from "../constants";
 import { generateCommitTitle } from "../utils/title";
 import { analyzeSentiment } from "../parser/sentiment";
 import cliProgress from "cli-progress";
@@ -180,22 +180,23 @@ export async function pushToCloud(
 
   progressBar?.start(pendingCommits.length, 0);
 
-  for (const commit of pendingCommits) {
+  // Process commits concurrently with a limit
+  const pushOneCommit = async (commit: CognitiveCommit): Promise<void> => {
     try {
       // Check for conflicts
       if (commit.cloudId) {
-        const { data: cloudCommit } = await supabase
+        const { data: cloudCommitData } = await supabase
           .from("cognitive_commits")
           .select("version, updated_at")
           .eq("id", commit.cloudId)
           .single();
 
-        if (cloudCommit && cloudCommit.version > (commit.cloudVersion || 0)) {
+        if (cloudCommitData && cloudCommitData.version > (commit.cloudVersion || 0)) {
           // Conflict detected - cloud has newer version
           db.commits.updateSyncStatus(commit.id, "conflict");
           result.conflicts++;
           progressBar?.increment();
-          continue;
+          return;
         }
       }
 
@@ -226,6 +227,12 @@ export async function pushToCloud(
       db.commits.updateSyncStatus(commit.id, "error");
       progressBar?.increment();
     }
+  };
+
+  // Process in concurrent batches
+  for (let i = 0; i < pendingCommits.length; i += SYNC_CONCURRENCY) {
+    const batch = pendingCommits.slice(i, i + SYNC_CONCURRENCY);
+    await Promise.all(batch.map(pushOneCommit));
   }
 
   progressBar?.stop();
