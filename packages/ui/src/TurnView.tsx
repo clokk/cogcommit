@@ -220,7 +220,7 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
                     className={`px-2 py-0.5 text-xs font-mono rounded cursor-pointer transition-colors
                       ${
                         tc.isError
-                          ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                          ? "bg-chronicle-red/20 text-chronicle-red hover:bg-chronicle-red/30"
                           : isUser
                             ? "bg-white/10 text-primary/70 hover:bg-white/15"
                             : "bg-panel-alt text-muted hover:bg-bg"
@@ -248,14 +248,14 @@ const TurnView = forwardRef<HTMLDivElement, TurnViewProps>(
                           <span
                             className={`font-medium ${
                               tc.isError
-                                ? "text-red-400"
+                                ? "text-chronicle-red"
                                 : "text-chronicle-green"
                             }`}
                           >
                             {tc.name}
                           </span>
                           {tc.isError && (
-                            <span className="px-1.5 py-0.5 text-xs rounded bg-red-400/20 text-red-400">
+                            <span className="px-1.5 py-0.5 text-xs rounded bg-red-400/20 text-chronicle-red">
                               error
                             </span>
                           )}

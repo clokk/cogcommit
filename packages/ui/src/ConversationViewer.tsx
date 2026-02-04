@@ -808,7 +808,7 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
                         {onUnpublish && (
                           <button
                             onClick={handleUnpublish}
-                            className="block w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-panel-alt transition-colors"
+                            className="block w-full text-left px-3 py-2 text-xs text-chronicle-red hover:bg-panel-alt transition-colors"
                           >
                             Unpublish
                           </button>
@@ -845,7 +845,7 @@ export const ConversationViewer = forwardRef<HTMLDivElement, ConversationViewerP
             {onDelete && !readOnly && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="px-2 py-1 text-xs text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors"
+                className="px-2 py-1 text-xs text-chronicle-red hover:text-chronicle-red/80 hover:bg-chronicle-red/10 rounded transition-colors"
               >
                 Delete
               </button>

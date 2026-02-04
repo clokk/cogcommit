@@ -70,7 +70,7 @@ const ToolOnlyGroup = forwardRef<HTMLDivElement, ToolOnlyGroupProps>(
                 className={`px-1.5 py-0.5 text-[10px] font-mono rounded cursor-pointer transition-colors
                   ${
                     tc.isError
-                      ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                      ? "bg-chronicle-red/20 text-chronicle-red hover:bg-chronicle-red/30"
                       : "bg-panel text-muted hover:bg-panel-alt"
                   }
                   ${expandedToolId === tc.id ? "ring-1 ring-chronicle-blue" : ""}`}
@@ -93,13 +93,13 @@ const ToolOnlyGroup = forwardRef<HTMLDivElement, ToolOnlyGroupProps>(
                     <div className="flex items-center gap-2 mb-1">
                       <span
                         className={`font-medium ${
-                          tc.isError ? "text-red-400" : "text-chronicle-green"
+                          tc.isError ? "text-chronicle-red" : "text-chronicle-green"
                         }`}
                       >
                         {tc.name}
                       </span>
                       {tc.isError && (
-                        <span className="px-1.5 py-0.5 text-xs rounded bg-red-400/20 text-red-400">
+                        <span className="px-1.5 py-0.5 text-xs rounded bg-chronicle-red/20 text-chronicle-red">
                           error
                         </span>
                       )}

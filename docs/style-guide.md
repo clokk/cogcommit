@@ -2,12 +2,12 @@
 
 ## Design Philosophy
 
-**"Anti-Slop Interface"** - A distinctive, archival aesthetic that rejects generic design patterns. The interface should feel like a time machine for code: professional, readable, and intentionally different from typical developer tools.
+**"Dusty Dark Aesthetic"** - A distinctive, archival aesthetic that rejects generic design patterns. The interface should feel like a time machine for code: professional, readable, and intentionally different from typical developer tools. The warm brown + muted accent combination creates a comfortable, readable interface that doesn't fatigue the eyes during long sessions reviewing conversations.
 
 - **The Void is Warm**: Rich warm blacks, not cold or pure black
 - **Typography is Distinctive**: Serif body text as an intentional choice
 - **Motion is Restrained**: Maximum 2 animation types, no micro-interactions
-- **Colors are Semantic**: Muted, purposeful accents over default blues
+- **Colors are Dusty & Semantic**: Muted, desaturated accents that blend cohesively—never saturated Tailwind defaults
 
 ## Color Palette
 
@@ -26,14 +26,32 @@
 | `--accent` | #e07b39 | Primary action buttons, links |
 | `--accent-hover` | #c66a2d | Hover state for accent |
 
-### Semantic Colors
+### Semantic Colors (Dusty Variants)
+
+All semantic colors are intentionally desaturated to create a cohesive, muted aesthetic.
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `--commit-closed` | #5fb88e | Git commit hashes, success states (muted sage) |
-| `--commit-open` | #d4a030 | Uncommitted work, file changes (warm amber) |
-| `--user-accent` | #3d84a8 | User message indicators (muted teal) |
-| `--parallel` | #9d7cd8 | Parallel session indicators (muted lavender) |
+| `--commit-closed` / `chronicle-green` | #5a9a7a | Git commit hashes, success states, approvals (dusty sage) |
+| `--commit-open` / `chronicle-amber` | #b8923a | Uncommitted work, file changes, warnings (dusty amber) |
+| `--user-accent` / `chronicle-blue` | #4f7d8d | User message bubbles, selection rings (dusty blue) |
+| `--parallel` / `chronicle-purple` | #8a7aab | Parallel session indicators, badges (dusty lavender) |
+| `chronicle-red` | #b85a5a | Rejections, errors, destructive actions (dusty red) |
+
+### Badge Color Palette
+
+Project and source badges use muted inline hex values rather than Tailwind defaults:
+
+| Color | Background | Text | Usage |
+|-------|------------|------|-------|
+| Muted purple | `bg-[#8a7aab]/20` | `text-[#a090c0]` | Cursor, misc badges |
+| Muted blue | `bg-[#5a8a9a]/20` | `text-[#6a9aaa]` | Claude, API sources |
+| Muted green | `bg-[#5a9a7a]/20` | `text-[#6aaa8a]` | Codex, success badges |
+| Muted amber | `bg-[#b8923a]/20` | `text-[#c8a24a]` | OpenCode, warning badges |
+| Muted pink | `bg-[#a07080]/20` | `text-[#b08090]` | Misc category badges |
+| Muted cyan | `bg-[#5a8a8a]/20` | `text-[#6a9a9a]` | Antigravity, active states |
+| Muted yellow | `bg-[#a09050]/20` | `text-[#b0a060]` | Misc category badges |
+| Muted indigo | `bg-[#6a7a9a]/20` | `text-[#7a8aaa]` | Misc category badges |
 
 ### Text Colors
 
@@ -314,9 +332,11 @@ Use `bg-subtle/40` with `animate-pulse` for skeleton elements:
 
 ### Colors
 
-- **DO**: Use warm accents (burnt orange) and muted semantics (sage, teal)
-- **DON'T**: Use default blues (#38bdf8), bright neons, or cold grays
-- **WHY**: Warm palette is easier on eyes and feels more intentional
+- **DO**: Use dusty, desaturated colors for all semantic accents
+- **DO**: Use warm brown backgrounds with muted accent combinations
+- **DON'T**: Use saturated Tailwind defaults (`blue-500`, `red-400`, `emerald-500`)
+- **DON'T**: Use bright neons, cold grays, or pure colors
+- **WHY**: Dusty palette creates cohesion and doesn't fatigue eyes during long sessions
 
 ### Motion
 

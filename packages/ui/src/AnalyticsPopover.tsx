@@ -114,7 +114,7 @@ export function AnalyticsPopover({
             {isLoading ? (
               <AnalyticsShimmer />
             ) : error ? (
-              <div className="text-xs text-red-400">{error}</div>
+              <div className="text-xs text-chronicle-red">{error}</div>
             ) : analytics ? (
               <div className="space-y-4">
                 {/* Main stats */}

@@ -218,7 +218,7 @@ export default function Header({
                       setShowUserMenu(false);
                       onSignOut();
                     }}
-                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-400 hover:bg-panel-alt transition-colors"
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-chronicle-red hover:bg-panel-alt transition-colors"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

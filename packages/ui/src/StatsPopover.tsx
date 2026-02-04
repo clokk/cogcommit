@@ -52,7 +52,11 @@ export function StatsPopover({ stats, weeklySummary }: StatsPopoverProps) {
       <button
         ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2 py-1 text-sm text-muted hover:text-primary transition-colors rounded hover:bg-panel"
+        className={`flex items-center gap-1.5 px-2 py-1 text-sm transition-colors rounded border ${
+          isOpen
+            ? "bg-[#5a8a8a]/20 text-[#6a9a9a] border-[#5a8a8a]/40"
+            : "text-muted hover:text-primary hover:bg-panel border-transparent"
+        }`}
       >
         {/* Small chart icon */}
         <svg
@@ -102,7 +106,7 @@ export function StatsPopover({ stats, weeklySummary }: StatsPopoverProps) {
               avg {weeklySummary.avgPromptsPerCommit.toFixed(1)} prompts/commit
             </div>
             {weeklySummary.weeklyRejectionCount > 0 && (
-              <div className="text-sm text-red-400 mt-1">
+              <div className="text-sm text-chronicle-red mt-1">
                 {weeklySummary.weeklyRejectionCount} rejections
               </div>
             )}
