@@ -29,7 +29,7 @@ export function EmbedCodeModal({ slug, title, onClose }: EmbedCodeModalProps) {
   const [showAuthor, setShowAuthor] = useState(true);
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://cogcommit.com";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://tuhnr.com";
 
   // Build embed URL
   const embedUrl = `${baseUrl}/embed/${slug}?view=${view}&theme=${theme}&showAuthor=${showAuthor}${view === "full" ? `&height=${height}` : ""}`;

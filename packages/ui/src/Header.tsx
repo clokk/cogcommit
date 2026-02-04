@@ -80,7 +80,7 @@ export default function Header({
         <div className="flex items-center gap-4">
           {homeHref && (
             <a href={homeHref} className="text-xl font-bold text-primary hover:text-chronicle-blue transition-colors">
-              CogCommit
+              Tuhnr
             </a>
           )}
           <h1 className="text-xl font-semibold text-chronicle-blue">
