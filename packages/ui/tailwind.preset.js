@@ -30,16 +30,16 @@ module.exports = {
           subtle: "#6d6862",
         },
 
-        // Semantic colors
+        // Semantic colors - dusty variants
         "chronicle-blue": "#4f7d8d",
-        "chronicle-green": "#5fb88e",
-        "chronicle-amber": "#d4a030",
-        "chronicle-purple": "#9d7cd8",
-        "chronicle-red": "#e05252",
+        "chronicle-green": "#5a9a7a",
+        "chronicle-amber": "#b8923a",
+        "chronicle-purple": "#8a7aab",
+        "chronicle-red": "#b85a5a",
 
         // Commit states
-        "commit-closed": "#5fb88e",
-        "commit-open": "#d4a030",
+        "commit-closed": "#5a9a7a",
+        "commit-open": "#b8923a",
         "user-accent": "#3d84a8",
         parallel: "#9d7cd8",
       },

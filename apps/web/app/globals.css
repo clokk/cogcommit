@@ -12,11 +12,11 @@
   --accent: #e07b39;
   --accent-hover: #c66a2d;
 
-  /* Semantic */
-  --commit-closed: #5fb88e;
-  --commit-open: #d4a030;
+  /* Semantic - dusty variants */
+  --commit-closed: #5a9a7a;
+  --commit-open: #b8923a;
   --user-accent: #4f7d8d;
-  --parallel: #9d7cd8;
+  --parallel: #8a7aab;
 
   /* Text */
   --text: #e8e4df;

@@ -112,15 +112,16 @@ export function getProjectColor(name: string): { bg: string; text: string } {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
 
+  // Muted dusty color palette for project badges
   const colors = [
-    { bg: "bg-chronicle-purple/20", text: "text-chronicle-purple" },
-    { bg: "bg-blue-500/20", text: "text-blue-400" },
-    { bg: "bg-emerald-500/20", text: "text-emerald-400" },
-    { bg: "bg-orange-500/20", text: "text-orange-400" },
-    { bg: "bg-pink-500/20", text: "text-pink-400" },
-    { bg: "bg-cyan-500/20", text: "text-cyan-400" },
-    { bg: "bg-yellow-500/20", text: "text-yellow-400" },
-    { bg: "bg-indigo-500/20", text: "text-indigo-400" },
+    { bg: "bg-[#8a7aab]/20", text: "text-[#a090c0]" },  // muted purple
+    { bg: "bg-[#5a8a9a]/20", text: "text-[#6a9aaa]" },  // muted blue
+    { bg: "bg-[#5a9a7a]/20", text: "text-[#6aaa8a]" },  // muted green
+    { bg: "bg-[#b8923a]/20", text: "text-[#c8a24a]" },  // muted amber
+    { bg: "bg-[#a07080]/20", text: "text-[#b08090]" },  // muted pink
+    { bg: "bg-[#5a8a8a]/20", text: "text-[#6a9a9a]" },  // muted cyan
+    { bg: "bg-[#a09050]/20", text: "text-[#b0a060]" },  // muted yellow
+    { bg: "bg-[#6a7a9a]/20", text: "text-[#7a8aaa]" },  // muted indigo
   ];
 
   return colors[Math.abs(hash) % colors.length];
@@ -134,27 +135,28 @@ export function getSourceStyle(source?: string): {
   text: string;
   label: string;
 } {
+  // Muted dusty colors for source badges
   switch (source) {
     case "claude_code":
-      return { bg: "bg-blue-500/20", text: "text-blue-400", label: "Claude" };
+      return { bg: "bg-[#5a8a9a]/20", text: "text-[#6a9aaa]", label: "Claude" };
     case "cursor":
       return {
-        bg: "bg-purple-500/20",
-        text: "text-purple-400",
+        bg: "bg-[#8a7aab]/20",
+        text: "text-[#a090c0]",
         label: "Cursor",
       };
     case "antigravity":
-      return { bg: "bg-cyan-500/20", text: "text-cyan-400", label: "Antigravity" };
+      return { bg: "bg-[#5a8a8a]/20", text: "text-[#6a9a9a]", label: "Antigravity" };
     case "codex":
       return {
-        bg: "bg-emerald-500/20",
-        text: "text-emerald-400",
+        bg: "bg-[#5a9a7a]/20",
+        text: "text-[#6aaa8a]",
         label: "Codex",
       };
     case "opencode":
       return {
-        bg: "bg-orange-500/20",
-        text: "text-orange-400",
+        bg: "bg-[#b8923a]/20",
+        text: "text-[#c8a24a]",
         label: "OpenCode",
       };
     default:

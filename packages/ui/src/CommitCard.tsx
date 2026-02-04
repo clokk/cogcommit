@@ -60,9 +60,10 @@ export default function CommitCard({
   showProjectBadge = false,
 }: CommitCardProps) {
   const hasGitHash = !!commit.gitHash;
+  // Softer border colors with reduced opacity
   const borderColor = hasGitHash
-    ? "border-chronicle-green"
-    : "border-chronicle-amber";
+    ? "border-chronicle-green/70"
+    : "border-chronicle-amber/70";
   const turnCount = commit.turnCount ?? (hasFullData(commit)
     ? commit.sessions.reduce((sum, s) => sum + s.turns.length, 0)
     : 0);
@@ -78,7 +79,7 @@ export default function CommitCard({
       onClick={onClick}
       className={`relative rounded-lg p-3 cursor-pointer transition-all border-l-2 ${borderColor} ${
         isSelected
-          ? "bg-panel/80 ring-1 ring-chronicle-blue/50"
+          ? "bg-panel/80 ring-1 ring-chronicle-blue/40"
           : "bg-bg/50 hover:bg-panel/50"
       }`}
     >
